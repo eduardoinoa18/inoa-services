@@ -1,5 +1,6 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
+import PricingReferenceTable from '../../components/PricingReferenceTable';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -22,7 +23,8 @@ export default function PricingPage() {
             Explore transparent, competitive pricing across our service lines. Build a tailored estimate instantly in English or Spanish.
           </p>
         </header>
-        <PricingCalculator initialLang="en" />
+  <PricingCalculator initialLang="en" />
+  <PricingReferenceTable />
         <section className="prose prose-slate max-w-none dark:prose-invert">
           <h2 className="text-xl font-semibold">How Estimates Work</h2>
           <p className="text-slate-600">The calculator provides an estimated professional service fee based on your inputs. Government filing fees, postage costs, and third-party platform fees (if any) are not included. Final quotes are confirmed during consultation.</p>
