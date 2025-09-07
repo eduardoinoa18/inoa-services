@@ -1,0 +1,22 @@
+export default function Logo({ size = 40 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 64 64"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-label="Inoa Services Logo"
+      role="img"
+    >
+      <title>Inoa Services</title>
+      <circle cx="22" cy="40" r="18" fill="#198754" />
+      <path d="M10 40a14 14 0 0024 0" fill="none" stroke="#e6fff3" strokeWidth="2" />
+      <path d="M30 14l16 14v18H16V28l14-14z" fill="#0D6EFD" />
+      <rect x="28" y="34" width="4" height="4" fill="#ffffff" />
+      <rect x="34" y="34" width="4" height="4" fill="#ffffff" />
+      <rect x="28" y="40" width="4" height="4" fill="#ffffff" />
+      <rect x="34" y="40" width="4" height="4" fill="#ffffff" />
+      <path d="M8 48c9 4 20 4 34 0" fill="none" stroke="#FFC107" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  );
+}

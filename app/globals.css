@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html { scroll-behavior: smooth; }
+
+/***** Brand helpers *****/
+.btn-primary { @apply bg-brand-primary text-white px-6 py-3 rounded-lg shadow hover:bg-blue-700 transition; }
+.btn-accent { @apply bg-brand-accent text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-yellow-500 transition; }
