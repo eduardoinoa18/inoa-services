@@ -1,4 +1,17 @@
 import Script from "next/script";
+import type React from "react";
+
+// Local declaration to ensure TS recognizes RealScout custom elements even if global types file isn't picked up
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'realscout-simple-search': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { 'partner-key'?: string; market?: string };
+      'realscout-your-listings': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { 'partner-key'?: string; market?: string };
+      'realscout-home-value': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { 'partner-key'?: string; market?: string };
+    }
+  }
+}
 
 export const metadata = {
   title: "Real Estate Advisory | Inoa Services",
@@ -39,7 +52,7 @@ export default function Page() {
         <div className="relative rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
           <Script src="https://em.realscout.com/widgets/realscout-web-components.umd.js" type="module" strategy="lazyOnload" />
           <style>{`realscout-simple-search { --rs-ss-font-primary-color:#374151; --rs-ss-searchbar-border-color:hsl(215 16% 82%); --rs-ss-box-shadow:0 6px 14px -4px #0000001a; --rs-ss-widget-width:100%; }`}</style>
-          <realscout-simple-search partner-key="YOUR_PARTNER_KEY" market="MA" />
+          {React.createElement('realscout-simple-search', { 'partner-key': 'YOUR_PARTNER_KEY', market: 'MA' })}
           <p className="text-xs text-gray-500 mt-3">Search powered by RealScout. Results are for discovery and may update frequently.</p>
         </div>
       </section>
@@ -50,7 +63,7 @@ export default function Page() {
         <p className="text-gray-600 mb-6 max-w-2xl">Browse active, past, and sold listings to get a feel for market dynamics and representation quality.</p>
         <div className="relative rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
           <style>{`realscout-your-listings { --rs-listing-divider-color:rgb(101,141,172); width:100%; display:block; }`}</style>
-          <realscout-your-listings partner-key="YOUR_PARTNER_KEY" market="MA" />
+          {React.createElement('realscout-your-listings', { 'partner-key': 'YOUR_PARTNER_KEY', market: 'MA' })}
           <p className="text-xs text-gray-500 mt-3">Historical and active listing data provided via RealScout integration.</p>
         </div>
       </section>
@@ -61,7 +74,7 @@ export default function Page() {
         <p className="text-gray-600 mb-6 max-w-2xl">Curious what your property could sell for? Get an instant guided valuation baseline—then we refine it with local insight.</p>
         <div className="relative rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
           <style>{`realscout-home-value { --rs-hvw-background-color:#ffffff; --rs-hvw-title-color:#111827; --rs-hvw-subtitle-color:rgba(55,65,81,.7); --rs-hvw-primary-button-text-color:#ffffff; --rs-hvw-primary-button-color:rgb(35,93,137); --rs-hvw-secondary-button-text-color:rgb(35,93,137); --rs-hvw-secondary-button-color:#ffffff; --rs-hvw-widget-width:100%; display:block; }`}</style>
-          <realscout-home-value partner-key="YOUR_PARTNER_KEY" market="MA" />
+          {React.createElement('realscout-home-value', { 'partner-key': 'YOUR_PARTNER_KEY', market: 'MA' })}
           <p className="text-xs text-gray-500 mt-3">Automated valuation is an estimate. Request a full comparative analysis for accuracy.</p>
         </div>
       </section>
