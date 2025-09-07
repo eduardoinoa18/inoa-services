@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto relative grid md:grid-cols-4 gap-12">
         <div className="md:col-span-2">
           <div className="mb-6">
-            <Logo size={70} withText tagline variant="footer" />
+            <Logo size={80} withText tagline variant="footer" />
           </div>
           <p className="text-sm text-gray-400 leading-relaxed max-w-md">
             Integrated support across Tax Preparation, Real Estate guidance, Notary Public, Immigration form preparation, and DR investment referrals—delivered with precision and integrity.

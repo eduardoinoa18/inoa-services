@@ -2,50 +2,47 @@ type LogoProps = {
   size?: number;
   withText?: boolean;
   tagline?: boolean;
-  variant?: 'default' | 'footer' | 'outline';
+  variant?: 'default' | 'footer';
   className?: string;
 };
 
-// Brand palette pulled from provided reference (approximate)
-const NAVY = '#013866';
-const TEAL = '#06B1B7';
-const TEAL_DARK = '#05939A';
+// Colors based strictly on provided raster reference (approximate hex sampling)
+const NAVY = '#073763';
+const TEAL = '#08B4BD';
+const TEAL_DARK = '#02A3AD';
 
-export default function Logo({ size = 48, withText = false, tagline = false, variant = 'default', className = '' }: LogoProps) {
+export default function Logo({ size = 72, withText = false, tagline = false, variant = 'default', className = '' }: LogoProps) {
   const isFooter = variant === 'footer';
-  const isOutline = variant === 'outline';
-  const houseFill = isFooter ? '#ffffff' : NAVY;
-  const globeStroke = isFooter ? 'rgba(255,255,255,0.9)' : NAVY;
-  const leafFill = isFooter ? 'rgba(255,255,255,0.85)' : TEAL;
-  const leafAccent = isFooter ? 'rgba(255,255,255,0.7)' : TEAL_DARK;
-  const textColor = isFooter ? 'text-white' : 'text-blue-800';
-  const taglineColor = isFooter ? 'text-teal-200' : 'text-teal-600';
+  const textColor = isFooter ? 'text-white' : 'text-[#073763]';
+  const taglineColor = isFooter ? 'text-teal-300' : 'text-[#08B4BD]';
 
   const mark = (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 120 120"
+      viewBox="0 0 200 200"
       role="img"
       aria-label="Inoa Services Logo"
       className={className}
     >
       <title>Inoa Services</title>
-      {/* Outer circular form (globe + leaf) */}
-      <circle cx="60" cy="60" r="54" fill={isOutline ? 'none' : '#ffffff'} stroke={globeStroke} strokeWidth={isOutline ? 5 : 4} />
-      {/* Globe meridians (simplified) */}
-      <path d="M30 50c18 8 42 8 60 0M34 70c16 7 36 7 52 0M54 26c-8 10-8 48 0 68M66 26c8 10 8 48 0 68" stroke={globeStroke} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={isOutline ? 0.25 : 0.35} />
-      {/* Leaf base (lower right) */}
-      <path d="M58 96c22 0 34-10 42-24-14-2-30 2-42 12-4-6-8-10-14-14 4 12 6 26 14 26Z" fill={isOutline ? 'none' : leafFill} stroke={leafAccent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" opacity={isOutline ? 0.3 : 1} />
-      {/* House / roof */}
-      <path d="M38 64V52l22-20 22 20v12" fill={houseFill} stroke={isFooter ? leafAccent : TEAL_DARK} strokeWidth={3} strokeLinejoin="round" />
-      <path d="M46 64v26h28V64" fill={houseFill} stroke={globeStroke} strokeWidth={3} strokeLinejoin="round" />
-      {/* Window (4 panes) */}
-      <g fill={isFooter ? leafAccent : TEAL_DARK}>
-        <rect x="56" y="66" width="6" height="6" rx="1" />
-        <rect x="68" y="66" width="6" height="6" rx="1" />
-        <rect x="56" y="78" width="6" height="6" rx="1" />
-        <rect x="68" y="78" width="6" height="6" rx="1" />
+      {/* Globe circle */}
+      <circle cx="92" cy="104" r="68" fill={TEAL} />
+      {/* Globe latitude / longitude simplified */}
+      <path d="M36 100c20 10 92 18 116 0M60 60c10 14 10 70 0 88M124 60c10 14 10 70 0 88M46 128c28 12 72 12 100 0" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" fill="none" opacity="0.85" />
+      {/* Leaf overlay bottom right */}
+      <path d="M72 150c26-4 44-10 62-26 10-9 18-20 26-32-2 24-12 44-30 58-18 14-38 18-58 16" fill={TEAL_DARK} />
+      <path d="M72 150c18-2 36-8 54-22" stroke="#fff" strokeWidth="5" strokeLinecap="round" fill="none" />
+      {/* House (roof + posts) */}
+      <path d="M92 52l60 56h-24v52H56v-52H32l60-56Z" fill={NAVY} />
+      {/* Inner white body (leave roof/navy edges) */}
+      <path d="M92 80l36 32v40H56v-40l36-32Z" fill="#ffffff" />
+      {/* 4-pane window */}
+      <g fill={NAVY}>
+        <rect x="86" y="108" width="12" height="12" />
+        <rect x="106" y="108" width="12" height="12" />
+        <rect x="86" y="128" width="12" height="12" />
+        <rect x="106" y="128" width="12" height="12" />
       </g>
     </svg>
   );
@@ -53,14 +50,16 @@ export default function Logo({ size = 48, withText = false, tagline = false, var
   if (!withText) return mark;
 
   return (
-    <div className="flex flex-col items-start gap-1">
-      <div className="flex items-center gap-3">
+    <div className="flex flex-col items-start">
+      <div className="flex items-center gap-4">
         {mark}
-        <span className={`font-semibold text-xl leading-tight ${textColor}`}>Inoa Services</span>
+        <div className="leading-none">
+          <div className={`font-semibold tracking-tight text-2xl ${textColor}`}>Inoa Services</div>
+          {tagline && (
+            <div className={`mt-2 text-base font-medium tracking-wide ${taglineColor}`}>Simply Great Service</div>
+          )}
+        </div>
       </div>
-      {tagline && (
-        <span className={`text-sm font-medium tracking-wide ${taglineColor}`}>Simply Great Service</span>
-      )}
     </div>
   );
 }

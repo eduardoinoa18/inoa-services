@@ -9,7 +9,7 @@ export default function Header() {
     <header className="w-full bg-white/90 backdrop-blur shadow-md fixed top-0 z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center px-4 py-3">
         <div className="flex items-center gap-2">
-          <Logo size={42} withText />
+          <Logo size={56} withText />
         </div>
         <button aria-label="Toggle Menu" className="md:hidden p-2" onClick={() => setOpen((v) => !v)}>
           <span className="block w-6 h-[2px] bg-gray-700 mb-1"></span>
