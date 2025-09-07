@@ -1,10 +1,14 @@
+import Logo from "./Logo";
+
 export default function Footer() {
   return (
-    <footer className="relative bg-gray-950 text-gray-300 pt-20 pb-10 px-4 overflow-hidden">
+    <footer className="relative bg-gray-950 text-gray-300 pt-24 pb-10 px-4 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none opacity-[0.4] bg-[radial-gradient(circle_at_15%_20%,rgba(13,110,253,0.25),transparent_60%),radial-gradient(circle_at_85%_70%,rgba(25,135,84,0.25),transparent_65%)]" />
       <div className="max-w-6xl mx-auto relative grid md:grid-cols-4 gap-12">
         <div className="md:col-span-2">
-          <h3 className="font-semibold text-white text-lg mb-4 tracking-wide">Inoa Services</h3>
+          <div className="mb-6">
+            <Logo size={70} withText tagline variant="footer" />
+          </div>
           <p className="text-sm text-gray-400 leading-relaxed max-w-md">
             Integrated support across Tax Preparation, Real Estate guidance, Notary Public, Immigration form preparation, and DR investment referrals—delivered with precision and integrity.
           </p>

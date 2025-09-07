@@ -2,6 +2,15 @@ export default function About() {
   return (
     <section id="about" className="relative py-24 px-4 bg-white overflow-hidden">
       <div className="absolute inset-0 pointer-events-none opacity-[0.15] bg-[radial-gradient(circle_at_30%_20%,#0D6EFD_0,#0D6EFD_8%,transparent_60%),radial-gradient(circle_at_70%_60%,#198754_0,#198754_10%,transparent_65%)]" />
+      <div className="absolute -right-32 top-1/2 -translate-y-1/2 opacity-[0.03] rotate-12 pointer-events-none select-none">
+        <svg viewBox="0 0 120 120" className="w-[420px] h-[420px]">
+          <circle cx="60" cy="60" r="54" fill="#ffffff" stroke="#013866" strokeWidth="4" />
+          <path d="M30 50c18 8 42 8 60 0M34 70c16 7 36 7 52 0M54 26c-8 10-8 48 0 68M66 26c8 10 8 48 0 68" stroke="#013866" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.25" />
+          <path d="M58 96c22 0 34-10 42-24-14-2-30 2-42 12-4-6-8-10-14-14 4 12 6 26 14 26Z" fill="#06B1B7" opacity="0.35" />
+          <path d="M38 64V52l22-20 22 20v12" fill="#013866" opacity="0.55" />
+          <path d="M46 64v26h28V64" fill="#013866" opacity="0.35" />
+        </svg>
+      </div>
       <div className="max-w-6xl mx-auto relative">
         <div className="grid lg:grid-cols-2 gap-14 items-center">
           <div>

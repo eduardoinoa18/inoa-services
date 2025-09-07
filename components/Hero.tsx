@@ -12,6 +12,15 @@ export default function Hero() {
         }}
       />
       <div className="absolute inset-0 -z-10 bg-gradient-to-br from-white/95 via-white/85 to-blue-50/70" />
+      <div className="pointer-events-none select-none absolute -z-10 inset-0 flex items-center justify-center opacity-[0.04]">
+        <svg viewBox="0 0 120 120" className="w-[600px] h-[600px]">
+          <circle cx="60" cy="60" r="54" fill="#ffffff" stroke="#013866" strokeWidth="4" />
+          <path d="M30 50c18 8 42 8 60 0M34 70c16 7 36 7 52 0M54 26c-8 10-8 48 0 68M66 26c8 10 8 48 0 68" stroke="#013866" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.25" />
+          <path d="M58 96c22 0 34-10 42-24-14-2-30 2-42 12-4-6-8-10-14-14 4 12 6 26 14 26Z" fill="#06B1B7" opacity="0.35" />
+          <path d="M38 64V52l22-20 22 20v12" fill="#013866" opacity="0.55" />
+          <path d="M46 64v26h28V64" fill="#013866" opacity="0.35" />
+        </svg>
+      </div>
       <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/80 to-transparent pointer-events-none" />
       <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-white to-transparent pointer-events-none" />
       <Reveal>
