@@ -1,5 +1,6 @@
 "use client";
 import React, { useMemo, useState } from "react";
+import PayButtons from "./PayButtons";
 
 // Updated Pricing JSON (service-first refined model)
 export const PRICING = {
@@ -590,6 +591,12 @@ export default function PricingCalculator({ initialLang = "en" }: { initialLang?
           <div className="flex items-baseline gap-4 mb-4">
             <span className="text-sm font-medium text-gray-500">{t.estimate}</span>
             <span className="text-3xl font-bold tracking-tight text-gray-800">${filteredTotal}</span>
+          </div>
+          {/* Contextual payment shortcut */}
+          <div className="mb-4">
+            {selectedService !== 'real_estate' && (
+              <PayButtons service={selectedService as 'tax'|'notary'|'immigration'} />
+            )}
           </div>
           {showBreakdown && (
             <div className="max-h-56 overflow-auto pr-1 space-y-2 text-sm">
