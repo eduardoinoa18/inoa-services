@@ -1,18 +1,6 @@
 import React from "react";
 import Script from "next/script";
 
-// Local declaration to ensure TS recognizes RealScout custom elements even if global types file isn't picked up
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace JSX {
-    interface IntrinsicElements {
-      'realscout-simple-search': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { 'partner-key'?: string; market?: string };
-      'realscout-your-listings': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { 'partner-key'?: string; market?: string };
-      'realscout-home-value': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { 'partner-key'?: string; market?: string };
-    }
-  }
-}
-
 export const metadata = {
   title: "Real Estate Advisory | Inoa Services",
   description: "Guided real estate support for buyers, sellers, and investors with strategic negotiation and trusted referrals.",

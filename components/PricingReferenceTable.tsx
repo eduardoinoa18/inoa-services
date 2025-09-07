@@ -9,85 +9,99 @@ export default function PricingReferenceTable() {
     <section className="mt-20" aria-labelledby="pricing-benchmark-heading">
       <h2 id="pricing-benchmark-heading" className="text-2xl font-bold tracking-tight mb-6 bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Competitive Pricing Reference (Massachusetts)</h2>
 
-      {/* TAX TABLE */}
-      <div className="mb-12 overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white shadow-sm">
+      {/* TAX TABLE (Updated Schema) */}
+      <div className="mb-16 overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white shadow-sm">
         <div className="px-5 py-4 border-b border-slate-200 bg-slate-50/60 backdrop-blur-sm">
-          <h3 className="font-semibold text-slate-800">1. Tax Preparation</h3>
-          <p className="text-xs text-slate-500 mt-1">Affordable & transparent vs. big-chain & CPA averages.</p>
+          <h3 className="font-semibold text-slate-800">1. Tax Preparation (Individual)</h3>
+          <p className="text-xs text-slate-500 mt-1">Core return types, special pricing, and scalable add‑ons.</p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-100 text-slate-600 text-xs uppercase tracking-wide">
-              <tr>
-                <th className="text-left px-5 py-3 font-medium">Service Offered</th>
-                <th className="text-left px-5 py-3 font-medium">Price</th>
-                <th className="text-left px-5 py-3 font-medium">Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              <Tr service="Basic Individual Return (Federal only)" price={PRICING.tax.base.individual} notes="~40% below national CPA averages (~$220)" />
-              <Tr service="Individual + State" price={PRICING.tax.base.indiv_state} notes="Still very budget‑friendly" />
-              <Tr service="Self-Employed / 1099 Contractor" price={PRICING.tax.base.self_employed} notes="~50% lower than typical CPA Schedule C pricing" />
-              <Tr service="Schedule C (with expenses)" price={PRICING.tax.base.schedule_c} notes="Competitive vs local $300–$500 range" />
-              <Tr service="Rental Property (per property)" price={`+$${PRICING.tax.add_ons.rental_property}`} notes="Scales per door" />
-              <Tr service="First 1099" price={`+$${PRICING.tax.add_ons.first_1099}`} notes="Transparent complexity fee" />
-              <Tr service="Additional 1099" price={`+$${PRICING.tax.add_ons.each_additional_1099} ea.`} notes="Affordable scaling" />
-              <Tr service="Investment / Stock Income" price={`+$${PRICING.tax.add_ons.investment_income}`} notes="Simple surcharge" />
-              <Tr service="ITIN Application / Renewal" price={`$${PRICING.tax.add_ons.itin}`} notes="Accessible support" />
-              <Tr service="Amended Return" price={`$${PRICING.tax.add_ons.amended_return}`} notes="Fair catch‑up" />
-              <Tr service="Tax Planning (30 min)" price={`$${PRICING.tax.add_ons.tax_planning}`} notes="Intro advisory rate" />
-              <Tr service="Audit Protection Add-On" price={`$${PRICING.tax.add_ons.audit_protection}`} notes="Peace of mind" />
-            </tbody>
-          </table>
+        <div className="grid md:grid-cols-3 gap-0">
+          {/* Base Returns */}
+          <div className="md:col-span-1 border-r border-slate-100">
+            <div className="px-5 py-3 border-b bg-slate-100 text-[11px] font-semibold tracking-wide text-slate-600 uppercase">Return Types</div>
+            <ul className="divide-y divide-slate-100 text-sm">
+              <Li label="Basic 1040 (No Dependents)" value={`$${PRICING.tax.basic1040}`} note="~40% below many CPA averages" />
+              <Li label="1040 with Dependents" value={`$${PRICING.tax["1040Dependents"]}`} />
+              <Li label="1040 + Itemized (Schedule A)" value={`$${PRICING.tax.itemized}`} />
+              <Li label="Self-Employment (Schedule C)" value={`$${PRICING.tax.selfEmployment}`} note="Competitive vs $300–$500 local" />
+              <Li label="Rental Property (Schedule E)" value={`+$${PRICING.tax.rentalProperty}`} note="Per property" />
+              <Li label="State Return (additional)" value={`+$${PRICING.tax.stateReturn}`} />
+              <Li label="E‑file & Direct Deposit" value="Included" />
+            </ul>
+          </div>
+          {/* Special Pricing */}
+          <div className="md:col-span-1 border-r border-slate-100">
+            <div className="px-5 py-3 border-b bg-slate-100 text-[11px] font-semibold tracking-wide text-slate-600 uppercase">Special Pricing</div>
+            <ul className="divide-y divide-slate-100 text-sm">
+              <Li label="Student Basic Return (W-2 only)" value={`$${PRICING.tax.studentBasic}`} />
+              <Li label="Senior (65+) Basic Return" value={`$${PRICING.tax.seniorBasic}`} />
+            </ul>
+          </div>
+          {/* Add‑Ons */}
+            <div className="md:col-span-1">
+            <div className="px-5 py-3 border-b bg-slate-100 text-[11px] font-semibold tracking-wide text-slate-600 uppercase">Add‑Ons</div>
+            <ul className="divide-y divide-slate-100 text-sm">
+              <Li label="Additional W‑2 (after first 2)" value={`+$${PRICING.tax.addons.extraW2} ea.`} />
+              <Li label="1099 Form" value={`$${PRICING.tax.addons["1099First"]} first`} note={`$${PRICING.tax.addons["1099Additional"]} each additional`} />
+              <Li label="Stock / Investments Reporting" value={`+$${PRICING.tax.addons.stocks}`} />
+              <Li label="Multiple States (each additional)" value={`+$${PRICING.tax.addons.multiState}`} />
+              <Li label="Audit Protection" value={`+$${PRICING.tax.addons.auditProtection}`} />
+            </ul>
+          </div>
         </div>
       </div>
 
-      {/* IMMIGRATION TABLE */}
-      <div className="mb-12 overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white shadow-sm">
+      {/* IMMIGRATION TABLE (Updated Schema) */}
+      <div className="mb-16 overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white shadow-sm">
         <div className="px-5 py-4 border-b border-slate-200 bg-slate-50/60 backdrop-blur-sm">
-          <h3 className="font-semibold text-slate-800">2. Immigration Assistance</h3>
-          <p className="text-xs text-slate-500 mt-1">Full-service form preparation vs higher law firm packages.</p>
+          <h3 className="font-semibold text-slate-800">2. Immigration Services</h3>
+          <p className="text-xs text-slate-500 mt-1">Modular assistance—form prep & document handling (no legal advice).</p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-100 text-slate-600 text-xs uppercase tracking-wide">
-              <tr>
-                <th className="text-left px-5 py-3 font-medium">Package / Service</th>
-                <th className="text-left px-5 py-3 font-medium">Price</th>
-              </tr>
-            </thead>
-            <tbody>
-              <Tr2 service="Naturalization (N-400) — Full Prep + Interview Prep" price={`$${PRICING.immigration.naturalization}`} />
-              <Tr2 service="Family-based Green Card (I-130 + I-485)" price={`$${PRICING.immigration.green_card_package}`} />
-              <Tr2 service="Additional USCIS Form" price={`+$${PRICING.immigration.additional_form} ea.`} />
-              <Tr2 service="Mailing Assistance" price={`+$${PRICING.immigration.mailing_assistance}`} />
-              <Tr2 service="Document Translation (per doc)" price={`+$${PRICING.immigration.document_translation}`} />
-            </tbody>
-          </table>
+        <div className="grid md:grid-cols-3 gap-0">
+          <div className="md:col-span-2 border-r border-slate-100">
+            <div className="px-5 py-3 border-b bg-slate-100 text-[11px] font-semibold tracking-wide text-slate-600 uppercase">Core Services</div>
+            <ul className="divide-y divide-slate-100 text-sm">
+              <Li label="Consultation" value={`$${PRICING.immigration.consultation}`} />
+              <Li label="Family Petition" value={`$${PRICING.immigration.familyPetition}`} />
+              <Li label="Green Card" value={`$${PRICING.immigration.greenCard}`} />
+              <Li label="Citizenship" value={`$${PRICING.immigration.citizenship}`} />
+              <Li label="Work Permit" value={`$${PRICING.immigration.workPermit}`} />
+              <Li label="Fiancé Visa" value={`$${PRICING.immigration.fianceVisa}`} />
+              <Li label="Document Translation (per doc)" value={`+$${PRICING.immigration.documentTranslation}`} />
+              <Li label="Full Package Assistance" value={`$${PRICING.immigration.packageAssistance}`} />
+            </ul>
+          </div>
+          <div className="md:col-span-1">
+            <div className="px-5 py-3 border-b bg-slate-100 text-[11px] font-semibold tracking-wide text-slate-600 uppercase">Add‑Ons</div>
+            <ul className="divide-y divide-slate-100 text-sm">
+              <Li label="Expedited" value={`+$${PRICING.immigration.addons.expedited}`} />
+              <Li label="Extra Copies" value={`+$${PRICING.immigration.addons.extraCopies} ea.`} />
+            </ul>
+          </div>
         </div>
       </div>
 
-      {/* NOTARY TABLE */}
-      <div className="mb-12 overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white shadow-sm">
+      {/* NOTARY TABLE (Updated Schema) */}
+      <div className="mb-16 overflow-hidden rounded-2xl ring-1 ring-slate-200 bg-white shadow-sm">
         <div className="px-5 py-4 border-b border-slate-200 bg-slate-50/60 backdrop-blur-sm">
           <h3 className="font-semibold text-slate-800">3. Notary Services</h3>
-          <p className="text-xs text-slate-500 mt-1">Transparent & below many mobile baselines.</p>
+          <p className="text-xs text-slate-500 mt-1">Simple, transparent, travel scaled by mileage.</p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-100 text-slate-600 text-xs uppercase tracking-wide">
-              <tr>
-                <th className="text-left px-5 py-3 font-medium">Service Offered</th>
-                <th className="text-left px-5 py-3 font-medium">Price</th>
-                <th className="text-left px-5 py-3 font-medium">Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              <Tr service="First Notarization" price={`$${PRICING.notary.first_notarization}`} notes="Below many $30–$50 baselines" />
-              <Tr service="Each Additional Document" price={`+$${PRICING.notary.additional_docs}`} notes="Low incremental" />
-              <Tr service="Mobile Notary — Travel Fee" price={`$${PRICING.notary.travel_fee_min} – $${PRICING.notary.travel_fee_max}`} notes="Flat, distance‑scaled" />
-            </tbody>
-          </table>
+        <div className="grid md:grid-cols-2 gap-0">
+          <div className="md:col-span-1 border-r border-slate-100">
+            <div className="px-5 py-3 border-b bg-slate-100 text-[11px] font-semibold tracking-wide text-slate-600 uppercase">Core</div>
+            <ul className="divide-y divide-slate-100 text-sm">
+              <Li label="First Notarization" value={`$${PRICING.notary.firstNotarization}`} />
+              <Li label="Each Additional Document" value={`+$${PRICING.notary.additionalDoc}`} />
+            </ul>
+          </div>
+          <div className="md:col-span-1">
+            <div className="px-5 py-3 border-b bg-slate-100 text-[11px] font-semibold tracking-wide text-slate-600 uppercase">Travel</div>
+            <ul className="divide-y divide-slate-100 text-sm">
+              <Li label="Mileage (first 10mi)" value={`$${PRICING.notary.travelPerMile}/mi`} note="applied when requested" />
+              <Li label="Additional Miles" value={`$${PRICING.notary.travelExtraMile}/mi`} note=">10mi" />
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -95,33 +109,29 @@ export default function PricingReferenceTable() {
       <div className="rounded-2xl ring-1 ring-slate-200 bg-white shadow-sm p-6">
         <h3 className="font-semibold text-slate-800 mb-2">4. Real Estate Services</h3>
         <ul className="text-sm text-slate-600 space-y-1">
-          <li>Buyer Representation — <span className="font-medium text-slate-800">After consultation</span></li>
-          <li>Seller Representation — <span className="font-medium text-slate-800">After consultation</span></li>
-          <li>Landlord Rental Service — <span className="font-medium text-slate-800">One month rent equivalent</span></li>
+          <li>Buyer Representation — <span className="font-medium text-slate-800">{PRICING.realEstate.buyer}</span></li>
+          <li>Seller Representation — <span className="font-medium text-slate-800">{PRICING.realEstate.seller}</span></li>
+          <li>Landlord Rental Service — <span className="font-medium text-slate-800">{PRICING.realEstate.landlordService}</span></li>
+          <li>DR Investment Advisory — <span className="font-medium text-slate-800">{PRICING.realEstate.drInvestment}</span></li>
         </ul>
       </div>
 
       <p className="mt-10 text-[11px] leading-relaxed text-slate-500 max-w-3xl">
-        Benchmarks referenced: national CPA averages & local ranges (Investopedia, regional CPA firm public ranges, user-supplied sources), local notary travel fee patterns, and form preparation market positioning. This table is informational; final quotes confirmed during consultation. Government filing fees not included.
+        Benchmarks referenced: national CPA averages, local market ranges, and user-provided research. Government & third‑party filing fees excluded. Travel pricing estimated — final confirmation during engagement.
       </p>
     </section>
   );
 }
 
-function Tr({ service, price, notes }: { service: string; price: string | number; notes?: string }) {
+// Reusable list row
+function Li({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
-    <tr className="border-t border-slate-100">
-      <td className="px-5 py-3 align-top font-medium text-slate-800 min-w-[200px]">{service}</td>
-      <td className="px-5 py-3 align-top text-slate-700 whitespace-nowrap">{typeof price === 'number' ? `$${price}` : price}</td>
-      <td className="px-5 py-3 align-top text-slate-500 text-xs">{notes || '—'}</td>
-    </tr>
-  );
-}
-function Tr2({ service, price }: { service: string; price: string | number }) {
-  return (
-    <tr className="border-t border-slate-100">
-      <td className="px-5 py-3 align-top font-medium text-slate-800 min-w-[220px]">{service}</td>
-      <td className="px-5 py-3 align-top text-slate-700">{typeof price === 'number' ? `$${price}` : price}</td>
-    </tr>
+    <li className="flex flex-col px-5 py-3">
+      <div className="flex items-baseline justify-between gap-4">
+        <span className="font-medium text-slate-800 leading-snug">{label}</span>
+        <span className="text-slate-700 whitespace-nowrap text-sm font-semibold">{value}</span>
+      </div>
+      {note && <span className="text-[11px] text-slate-500 mt-1">{note}</span>}
+    </li>
   );
 }
