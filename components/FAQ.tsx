@@ -20,25 +20,40 @@ const faqs = [
 export default function FAQ() {
   const [open, setOpen] = useState<number | null>(0);
   return (
-    <section className="max-w-5xl mx-auto px-4 py-16" aria-labelledby="faq-heading">
-      <h2 id="faq-heading" className="text-3xl font-bold text-gray-800 text-center mb-8">Frequently Asked Questions</h2>
-      <div className="divide-y rounded-xl bg-white shadow border border-gray-100 overflow-hidden">
-        {faqs.map((item, i) => (
-          <div key={i}>
-            <button
-              className="w-full text-left px-5 py-4 flex justify-between items-center hover:bg-gray-50"
-              onClick={() => setOpen(open === i ? null : i)}
-              aria-expanded={open === i}
-            >
-              <span className="font-semibold text-gray-800">{item.q}</span>
-              <span className="ml-4 text-gray-500">{open === i ? "−" : "+"}</span>
-            </button>
-            <div className={`px-5 transition-all ${open === i ? "max-h-40 py-2" : "max-h-0 overflow-hidden"}`}>
-              <p className="text-gray-600">{item.a}</p>
-            </div>
+      <section className="relative py-24 px-4 bg-gradient-to-b from-gray-50 via-white to-white">
+        <div className="max-w-5xl mx-auto relative">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-10 text-center tracking-tight">Frequently Asked Questions</h2>
+          <div className="space-y-4">
+            {faqs.map((f, i) => {
+              const active = open === i;
+              return (
+                <div
+                  key={f.q}
+                  className={`rounded-2xl border transition shadow-sm ${active ? "border-blue-200 shadow-md bg-white" : "border-gray-200 bg-white/80"}`}
+                >
+                  <button
+                    className="w-full text-left px-6 py-5 flex justify-between items-center gap-6"
+                    onClick={() => setOpen(active ? null : i)}
+                  >
+                    <span className="font-semibold text-gray-800 leading-snug">{f.q}</span>
+                    <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold transition ${active ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"}`}>
+                      {active ? "−" : "+"}
+                    </span>
+                  </button>
+                  <div
+                    className={`grid transition-[grid-template-rows] duration-300 ease-out ${active ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="px-6 pb-6 pt-0 text-gray-600 text-sm leading-relaxed border-t border-gray-100">
+                        {f.a}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ))}
-      </div>
-    </section>
-  );
+        </div>
+      </section>
+    );
 }
