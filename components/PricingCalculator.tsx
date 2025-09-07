@@ -44,6 +44,8 @@ const T = {
   en: {
     title: "Inoa Services — Pricing Estimator",
     languageBtn: "Español",
+  selectService: "Select a service",
+  service: "Service",
     tax: "Tax Preparation",
     notary: "Notary",
     immigration: "Immigration Assistance",
@@ -85,6 +87,8 @@ const T = {
   es: {
     title: "Inoa Services — Estimador de Precios",
     languageBtn: "English",
+  selectService: "Seleccione un servicio",
+  service: "Servicio",
     tax: "Preparación de Impuestos",
     notary: "Notaría",
     immigration: "Asistencia Migratoria",
@@ -151,6 +155,8 @@ export interface EstimateInputs {
   immTranslations?: number;
 }
 
+export interface BreakdownItem { label: string; amount: number; category: 'tax' | 'notary' | 'immigration'; }
+
 export function calculateEstimate(inputs: EstimateInputs = {}) {
   const s = {
     taxType: "individual",
@@ -172,7 +178,7 @@ export function calculateEstimate(inputs: EstimateInputs = {}) {
   };
 
   let total = 0;
-  const breakdown: { label: string; amount: number }[] = [];
+  const breakdown: BreakdownItem[] = [];
 
   const taxBaseMap: Record<string, number> = {
     individual: PRICING.tax.base.individual,
@@ -182,39 +188,39 @@ export function calculateEstimate(inputs: EstimateInputs = {}) {
   };
   const basePrice = taxBaseMap[s.taxType] ?? PRICING.tax.base.individual;
   total += basePrice;
-  breakdown.push({ label: s.taxType, amount: basePrice });
+  breakdown.push({ label: s.taxType, amount: basePrice, category: 'tax' });
 
   if (s.rentalProps > 0) {
     const amt = s.rentalProps * PRICING.tax.add_ons.rental_property;
     total += amt;
-    breakdown.push({ label: `Rental properties: ${s.rentalProps}`, amount: amt });
+  breakdown.push({ label: `Rental properties: ${s.rentalProps}`, amount: amt, category: 'tax' });
   }
   if (s.num1099s > 0) {
     const first = PRICING.tax.add_ons.first_1099;
     const extra = Math.max(0, s.num1099s - 1) * PRICING.tax.add_ons.each_additional_1099;
     const amt = first + extra;
     total += amt;
-    breakdown.push({ label: `1099s: ${s.num1099s}`, amount: amt });
+  breakdown.push({ label: `1099s: ${s.num1099s}`, amount: amt, category: 'tax' });
   }
   if (s.hasInvestments) {
     total += PRICING.tax.add_ons.investment_income;
-    breakdown.push({ label: "Investments", amount: PRICING.tax.add_ons.investment_income });
+  breakdown.push({ label: "Investments", amount: PRICING.tax.add_ons.investment_income, category: 'tax' });
   }
   if (s.hasITIN) {
     total += PRICING.tax.add_ons.itin;
-    breakdown.push({ label: "ITIN", amount: PRICING.tax.add_ons.itin });
+  breakdown.push({ label: "ITIN", amount: PRICING.tax.add_ons.itin, category: 'tax' });
   }
   if (s.isAmended) {
     total += PRICING.tax.add_ons.amended_return;
-    breakdown.push({ label: "Amended return", amount: PRICING.tax.add_ons.amended_return });
+  breakdown.push({ label: "Amended return", amount: PRICING.tax.add_ons.amended_return, category: 'tax' });
   }
   if (s.taxPlanning) {
     total += PRICING.tax.add_ons.tax_planning;
-    breakdown.push({ label: "Tax planning", amount: PRICING.tax.add_ons.tax_planning });
+  breakdown.push({ label: "Tax planning", amount: PRICING.tax.add_ons.tax_planning, category: 'tax' });
   }
   if (s.auditProtection) {
     total += PRICING.tax.add_ons.audit_protection;
-    breakdown.push({ label: "Audit protection", amount: PRICING.tax.add_ons.audit_protection });
+  breakdown.push({ label: "Audit protection", amount: PRICING.tax.add_ons.audit_protection, category: 'tax' });
   }
 
   if (s.notaryDocs > 0) {
@@ -222,35 +228,35 @@ export function calculateEstimate(inputs: EstimateInputs = {}) {
     const additional = Math.max(0, s.notaryDocs - 1) * PRICING.notary.additional_docs;
     const amt = first + additional;
     total += amt;
-    breakdown.push({ label: `Notary (${s.notaryDocs})`, amount: amt });
+  breakdown.push({ label: `Notary (${s.notaryDocs})`, amount: amt, category: 'notary' });
     if (s.mobileNotary) {
       const travel = computeTravelFee(s.travelMiles || 0);
       total += travel;
-      breakdown.push({ label: `Mobile notary travel (${s.travelMiles}mi)`, amount: travel });
+  breakdown.push({ label: `Mobile notary travel (${s.travelMiles}mi)`, amount: travel, category: 'notary' });
     }
   }
 
   if (s.immPackage && s.immPackage !== "none") {
     if (s.immPackage === "naturalization") {
       total += PRICING.immigration.naturalization;
-      breakdown.push({ label: "Naturalization (N-400)", amount: PRICING.immigration.naturalization });
+  breakdown.push({ label: "Naturalization (N-400)", amount: PRICING.immigration.naturalization, category: 'immigration' });
     } else if (s.immPackage === "green_card") {
       total += PRICING.immigration.green_card_package;
-      breakdown.push({ label: "Family-based Green Card", amount: PRICING.immigration.green_card_package });
+  breakdown.push({ label: "Family-based Green Card", amount: PRICING.immigration.green_card_package, category: 'immigration' });
     }
     if (s.immExtraForms > 0) {
       const amt = s.immExtraForms * PRICING.immigration.additional_form;
       total += amt;
-      breakdown.push({ label: `Extra USCIS forms: ${s.immExtraForms}`, amount: amt });
+  breakdown.push({ label: `Extra USCIS forms: ${s.immExtraForms}`, amount: amt, category: 'immigration' });
     }
     if (s.immMailing) {
       total += PRICING.immigration.mailing_assistance;
-      breakdown.push({ label: "Mailing assistance", amount: PRICING.immigration.mailing_assistance });
+  breakdown.push({ label: "Mailing assistance", amount: PRICING.immigration.mailing_assistance, category: 'immigration' });
     }
     if (s.immTranslations > 0) {
       const amt = s.immTranslations * PRICING.immigration.document_translation;
       total += amt;
-      breakdown.push({ label: `Document translations: ${s.immTranslations}`, amount: amt });
+  breakdown.push({ label: `Document translations: ${s.immTranslations}`, amount: amt, category: 'immigration' });
     }
   }
 
@@ -261,6 +267,7 @@ export default function PricingCalculator({ initialLang = "en" }: { initialLang?
   const [lang, setLang] = useState(initialLang);
   const t = T[lang];
 
+  const [selectedService, setSelectedService] = useState<'tax' | 'notary' | 'immigration' | 'real_estate'>('tax');
   const [taxType, setTaxType] = useState("individual");
   const [rentalProps, setRentalProps] = useState(0);
   const [num1099s, setNum1099s] = useState(0);
@@ -278,7 +285,7 @@ export default function PricingCalculator({ initialLang = "en" }: { initialLang?
   const [immTranslations, setImmTranslations] = useState(0);
   const [showBreakdown, setShowBreakdown] = useState(false);
 
-  const result = useMemo(
+  const fullResult = useMemo(
     () =>
       calculateEstimate({
         taxType,
@@ -297,24 +304,11 @@ export default function PricingCalculator({ initialLang = "en" }: { initialLang?
         immMailing,
         immTranslations,
       }),
-    [
-      taxType,
-      rentalProps,
-      num1099s,
-      hasInvestments,
-      hasITIN,
-      isAmended,
-      taxPlanning,
-      auditProtection,
-      notaryDocs,
-      mobileNotary,
-      travelMiles,
-      immPackage,
-      immExtraForms,
-      immMailing,
-      immTranslations,
-    ]
+    [taxType, rentalProps, num1099s, hasInvestments, hasITIN, isAmended, taxPlanning, auditProtection, notaryDocs, mobileNotary, travelMiles, immPackage, immExtraForms, immMailing, immTranslations]
   );
+
+  const filteredBreakdown = fullResult.breakdown.filter(b => b.category === selectedService);
+  const filteredTotal = filteredBreakdown.reduce((acc, b) => acc + b.amount, 0);
 
   const reset = () => {
     setTaxType("individual");
@@ -336,7 +330,7 @@ export default function PricingCalculator({ initialLang = "en" }: { initialLang?
   };
 
   const copyEstimate = async () => {
-    const text = `${t.estimate}: $${result.total}\n\n${result.breakdown
+    const text = `${t.estimate}: $${filteredTotal}\n\n${filteredBreakdown
       .map((b) => `${b.label}: $${b.amount}`)
       .join("\n")}`;
     try {
@@ -360,8 +354,25 @@ export default function PricingCalculator({ initialLang = "en" }: { initialLang?
         </button>
       </div>
 
+      {/* SERVICE PICKER */}
+      <div className="mb-8 grid md:grid-cols-3 gap-5 items-end">
+        <div className="md:col-span-2">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">{t.service}</label>
+          <select
+            value={selectedService}
+            onChange={(e) => { setSelectedService(e.target.value as any); setShowBreakdown(false); }}
+            className="p-3 border rounded-lg bg-white shadow-sm w-full"
+          >
+            <option value="tax">{t.tax}</option>
+            <option value="notary">{t.notary}</option>
+            <option value="immigration">{t.immigration}</option>
+            <option value="real_estate">{t.realEstate}</option>
+          </select>
+        </div>
+      </div>
+
       {/* TAX */}
-      <div className="mb-10">
+      {selectedService === 'tax' && (<div className="mb-10">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">{t.tax}</h2>
         <div className="grid md:grid-cols-2 gap-5">
           <select
@@ -414,10 +425,10 @@ export default function PricingCalculator({ initialLang = "en" }: { initialLang?
             ))}
           </div>
         </div>
-      </div>
+      </div>)}
 
       {/* NOTARY */}
-      <div className="mb-10">
+      {selectedService === 'notary' && (<div className="mb-10">
         <h2 className="text-lg font-semibold mb-4">{t.notary}</h2>
         <div className="grid md:grid-cols-2 gap-5">
           <div className="flex items-center gap-3">
@@ -453,10 +464,10 @@ export default function PricingCalculator({ initialLang = "en" }: { initialLang?
             )}
           </div>
         </div>
-      </div>
+      </div>)}
 
       {/* IMMIGRATION */}
-      <div className="mb-10">
+      {selectedService === 'immigration' && (<div className="mb-10">
         <h2 className="text-lg font-semibold mb-4">{t.immigration}</h2>
         <div className="grid md:grid-cols-2 gap-5">
           <select
@@ -497,17 +508,17 @@ export default function PricingCalculator({ initialLang = "en" }: { initialLang?
             />
           </div>
         </div>
-      </div>
+      </div>)}
 
       {/* REAL ESTATE */}
-      <div className="mb-10">
+      {selectedService === 'real_estate' && (<div className="mb-10">
         <h2 className="text-lg font-semibold mb-2">{t.realEstate}</h2>
         <div className="text-sm text-gray-700 space-y-1 bg-gray-50 p-4 rounded-xl border border-gray-100">
           <div>{t.buyerRep}</div>
             <div>{t.sellerRep}</div>
             <div>{t.landlordFee}</div>
         </div>
-      </div>
+      </div>)}
 
       {/* RESULT */}
       <div className="flex flex-col lg:flex-row gap-6 lg:items-start">
@@ -540,17 +551,17 @@ export default function PricingCalculator({ initialLang = "en" }: { initialLang?
         <div className="flex-1 bg-gradient-to-br from-gray-50 to-white border border-gray-100 rounded-2xl p-6 shadow-sm">
           <div className="flex items-baseline gap-4 mb-4">
             <span className="text-sm font-medium text-gray-500">{t.estimate}</span>
-            <span className="text-3xl font-bold tracking-tight text-gray-800">${result.total}</span>
+            <span className="text-3xl font-bold tracking-tight text-gray-800">${filteredTotal}</span>
           </div>
           {showBreakdown && (
             <div className="max-h-56 overflow-auto pr-1 space-y-2 text-sm">
-              {result.breakdown.map((b, i) => (
+              {filteredBreakdown.map((b, i) => (
                 <div key={i} className="flex justify-between border-b border-gray-100 pb-1">
                   <span className="text-gray-600 truncate pr-4">{b.label}</span>
                   <span className="font-semibold text-gray-800">${b.amount}</span>
                 </div>
               ))}
-              {result.breakdown.length === 0 && <div className="text-gray-400">—</div>}
+              {filteredBreakdown.length === 0 && <div className="text-gray-400">—</div>}
             </div>
           )}
           <p className="mt-5 text-[11px] leading-relaxed text-gray-500 italic">{t.disclaimer}</p>
