@@ -1,318 +1,244 @@
 "use client";
 import React, { useMemo, useState } from "react";
-import PayButtons from "./PayButtons";
 
-// Updated Pricing JSON (service-first refined model)
+// Revised pricing per latest user instruction
 export const PRICING = {
   tax: {
-    basic1040: 120,
-    "1040Dependents": 150,
-    itemized: 180,
-    selfEmployment: 250,
-    rentalProperty: 50, // per property
-    stateReturn: 40, // first additional state (if primary is federal only)
-    studentBasic: 80,
-    seniorBasic: 100,
+    services: {
+      basic1040: 150,
+      withDependents: 180,
+      itemized: 220,
+      selfEmploymentBase: 250, // base
+      selfEmploymentAdditional: 50, // per extra Schedule C
+      rentalProperty: 50, // per property
+      stateReturn: 35, // each additional state
+    },
+    special: {
+      student: 100,
+      senior: 120,
+    },
     addons: {
-      extraW2: 15, // after first 2
-      "1099First": 25,
-      "1099Additional": 10,
-      stocks: 40,
-      multiState: 35, // each additional beyond first stateReturn
-      auditProtection: 50,
+      extraW2: 20, // after first 2
+      '1099First': 30,
+      '1099Additional': 15,
+      stocks: 60,
+      auditProtection: 75,
     },
   },
   immigration: {
-    consultation: 50,
-    familyPetition: 350,
-    greenCard: 500,
-    citizenship: 300,
-    workPermit: 250,
-    fianceVisa: 450,
-    documentTranslation: 50,
-    packageAssistance: 600,
-    addons: {
-      expedited: 100,
-      extraCopies: 25,
-    },
+    consultation: 75,
+    familyPetition: 450,
+    greenCard: 650,
+    citizenship: 400,
+    workPermit: 350,
+    fianceVisa: 600,
+    documentTranslation: 65, // per page
+    packageAssistance: 850, // starting
   },
   notary: {
-    firstNotarization: 20,
-    additionalDoc: 5,
-    travelPerMile: 2,
-    travelExtraMile: 1, // applied after threshold (assumed 10mi)
+    first: 25,
+    additional: 10,
+    travelFirstRate: 2, // per mile up to 20
+    travelReducedRate: 1, // per mile beyond 20
   },
   realEstate: {
-    buyer: "After Consultation",
-    seller: "After Consultation",
-    landlordService: "1 Month’s Rent",
-    drInvestment: "After Consultation",
-  },
+    buyer: 'After Consultation',
+    seller: 'After Consultation',
+    landlord: 'One Month’s Rent',
+    dr: 'After Consultation'
+  }
 } as const;
 
 // Translations (extended for new pricing model)
 const T = {
   en: {
-    title: "Inoa Services — Pricing Estimator",
-    languageBtn: "Español",
-    selectService: "Select a service",
-    service: "Service",
-    tax: "Tax Preparation",
-    notary: "Notary",
-    immigration: "Immigration Assistance",
-    realEstate: "Real Estate Services",
-    // Tax new wording
-    baseReturn: "Return Type",
-    basic1040: "Basic 1040 (No Dependents)",
-    withDependents: "1040 w/ Dependents",
-    itemized: "1040 + Schedule A",
-    selfEmployment: "Self-Employment (Schedule C)",
-    studentBasic: "Student Basic Return (W-2 only)",
-    seniorBasic: "Senior (65+) Basic Return",
-    specialCategory: "Special Pricing (optional)",
-    rentalProps: "Rental properties (Schedule E)",
-    stateIncluded: "Add first state return",
-    extraStates: "Additional states (beyond first)",
-    extraW2: "Extra W-2 (after first 2)",
-    w2Count: "Total W-2 forms",
-    form1099Count: "1099 forms",
-    stocks: "Stock / investment reporting",
-    auditProtection: "Audit Protection",
-    // Immigration
-    immigrationServices: "Immigration Services",
-    consultation: "Consultation",
-    familyPetition: "Family Petition",
-    greenCard: "Green Card",
-    citizenship: "Citizenship",
-    workPermit: "Work Permit",
-    fianceVisa: "Fiancé Visa",
-    documentTranslation: "Document translations",
-    packageAssistance: "Full Package Assistance",
-    expedited: "Expedited handling",
-    extraCopies: "Extra copies",
-    copiesCount: "Copies (extra)",
-    translationsCount: "Translations",
-    // Notary
-    notaryCount: "Documents to notarize",
-    travelMiles: "Travel distance (miles)",
-    includeTravel: "Include travel",
-    // Shared
-    calculate: "Recalculate",
-    estimate: "Estimated Price",
-    clear: "Clear",
-    copy: "Copy Estimate",
-    viewDetails: "View breakdown",
-    hideDetails: "Hide breakdown",
-    buyerRep: "Buyer Representation — After consultation",
-    sellerRep: "Seller Representation — After consultation",
-    landlordFee: "Landlord service — One month's rent",
-    drInvestment: "DR Property Investment — After consultation",
-    estimateCopied: "Estimate copied to clipboard",
-    copyFail: "Copy failed",
-    disclaimer: "Estimates exclude government / filing fees. Special pricing overrides base return. Travel fee assumption: first 10mi @ $2/mi, remaining @ $1/mi.",
+    title: 'Service Estimate',
+    languageBtn: 'Español',
+    category: 'Category',
+    tax: 'Tax',
+    immigration: 'Immigration',
+    notary: 'Notary',
+    realEstate: 'Real Estate',
+    // tax labels
+    taxHeader: 'Tax Services',
+    specialPricing: 'Special Pricing (choose one if applies)',
+    student: 'Student Basic (W-2 only)',
+    senior: 'Senior (65+) Basic',
+    rentals: 'Rental Properties',
+    scheduleCs: 'Extra Schedule C (beyond first)',
+    extraStates: 'Additional State Returns',
+    extraW2: 'Extra W-2 (after first 2)',
+    w2Count: 'Total W-2 Forms',
+    form1099Count: 'Total 1099 Forms',
+    stocks: 'Stock / Investments Reporting',
+    auditProtection: 'Audit Protection',
+    // immigration
+    immigrationHeader: 'Immigration Services',
+    translations: 'Document Translations (pages)',
+    // notary
+    notaryHeader: 'Notary Services',
+    notaryDocs: 'Documents to notarize',
+    travelMiles: 'Travel miles',
+    // real estate
+    realEstateHeader: 'Real Estate Services (informational)',
+    disclaimer: 'Final pricing will be confirmed after consultation. Additional forms or services may apply.',
+    sendEstimate: 'Send Estimate Request',
+    backHome: 'Back to Home',
+    details: 'Details',
+    hide: 'Hide',
+    total: 'Estimated Total',
+    copied: 'Estimate copied',
+    copy: 'Copy',
+    name: 'Name',
+    email: 'Email',
+    message: 'Message (optional)',
+    sending: 'Sending...',
+    success: 'Request sent',
+    failed: 'Send failed',
   },
   es: {
-    title: "Inoa Services — Estimador de Precios",
-    languageBtn: "English",
-    selectService: "Seleccione un servicio",
-    service: "Servicio",
-    tax: "Preparación de Impuestos",
-    notary: "Notaría",
-    immigration: "Asistencia Migratoria",
-    realEstate: "Servicios Inmobiliarios",
-    // Tax
-    baseReturn: "Tipo de Declaración",
-    basic1040: "1040 Básica (Sin Dependientes)",
-    withDependents: "1040 con Dependientes",
-    itemized: "1040 + Anexo A",
-    selfEmployment: "Autónomos (Anexo C)",
-    studentBasic: "Estudiante (W-2) Básica",
-    seniorBasic: "Mayor (65+) Básica",
-    specialCategory: "Precio Especial (opcional)",
-    rentalProps: "Propiedades en alquiler",
-    stateIncluded: "Agregar declaración estatal",
-    extraStates: "Estados adicionales",
-    extraW2: "W-2 extra (después de 2)",
-    w2Count: "Total de W-2",
-    form1099Count: "Formularios 1099",
-    stocks: "Reportar inversiones",
-    auditProtection: "Protección Auditoría",
-    // Immigration
-    immigrationServices: "Servicios Migratorios",
-    consultation: "Consulta",
-    familyPetition: "Petición Familiar",
-    greenCard: "Green Card",
-    citizenship: "Ciudadanía",
-    workPermit: "Permiso de Trabajo",
-    fianceVisa: "Visa Fiancé",
-    documentTranslation: "Traducciones de documentos",
-    packageAssistance: "Asistencia Paquete Completo",
-    expedited: "Prioritario",
-    extraCopies: "Copias extra",
-    copiesCount: "Copias (extra)",
-    translationsCount: "Traducciones",
-    // Notary
-    notaryCount: "Docs a notarizar",
-    travelMiles: "Distancia (millas)",
-    includeTravel: "Incluir viaje",
-    // Shared
-    calculate: "Recalcular",
-    estimate: "Precio Estimado",
-    clear: "Limpiar",
-    copy: "Copiar Estimado",
-    viewDetails: "Ver desglose",
-    hideDetails: "Ocultar desglose",
-    buyerRep: "Representación comprador — Tras consulta",
-    sellerRep: "Representación vendedor — Tras consulta",
-    landlordFee: "Servicio alquiler — 1 mes de renta",
-    drInvestment: "Inversión RD — Tras consulta",
-    estimateCopied: "Estimado copiado",
-    copyFail: "Error al copiar",
-    disclaimer: "Estimados excluyen tarifas gubernamentales. Precio especial reemplaza base. Viaje: primeros 10mi $2/mi, resto $1/mi.",
-  },
+    title: 'Estimado de Servicios',
+    languageBtn: 'English',
+    category: 'Categoría',
+    tax: 'Impuestos',
+    immigration: 'Migración',
+    notary: 'Notaría',
+    realEstate: 'Bienes Raíces',
+    taxHeader: 'Servicios de Impuestos',
+    specialPricing: 'Precio Especial (uno si aplica)',
+    student: 'Estudiante (W-2)',
+    senior: 'Mayor (65+)',
+    rentals: 'Propiedades en alquiler',
+    scheduleCs: 'Anexos C adicionales',
+    extraStates: 'Estados adicionales',
+    extraW2: 'W-2 extra (después de 2)',
+    w2Count: 'Total formularios W-2',
+    form1099Count: 'Total formularios 1099',
+    stocks: 'Inversiones',
+    auditProtection: 'Protección auditoría',
+    immigrationHeader: 'Servicios Migratorios',
+    translations: 'Traducciones (páginas)',
+    notaryHeader: 'Servicios de Notaría',
+    notaryDocs: 'Documentos a notarizar',
+    travelMiles: 'Millas de viaje',
+    realEstateHeader: 'Servicios Inmobiliarios (informativo)',
+    disclaimer: 'El precio final se confirmará tras la consulta. Pueden aplicar formularios o servicios adicionales.',
+    sendEstimate: 'Enviar Solicitud',
+    backHome: 'Volver',
+    details: 'Desglose',
+    hide: 'Ocultar',
+    total: 'Total Estimado',
+    copied: 'Estimado copiado',
+    copy: 'Copiar',
+    name: 'Nombre',
+    email: 'Email',
+    message: 'Mensaje (opcional)',
+    sending: 'Enviando...',
+    success: 'Enviado',
+    failed: 'Error al enviar',
+  }
 };
 
 // Assumption: first 10 miles cost travelPerMile, remaining miles cost travelExtraMile
 function computeTravelFee(distanceMiles = 0) {
   const miles = Math.max(0, distanceMiles);
-  const threshold = 10;
-  const first = Math.min(miles, threshold) * PRICING.notary.travelPerMile;
-  const extra = Math.max(0, miles - threshold) * PRICING.notary.travelExtraMile;
-  return first + extra;
+  const firstSegment = Math.min(20, miles) * PRICING.notary.travelFirstRate;
+  const secondSegment = Math.max(0, miles - 20) * PRICING.notary.travelReducedRate;
+  return firstSegment + secondSegment;
 }
 
 export interface EstimateInputs {
-  // tax
-  taxBase?: string; // basic1040 | 1040Dependents | itemized | selfEmployment
-  specialCategory?: string; // studentBasic | seniorBasic | none
-  rentalProps?: number;
-  includeState?: boolean;
-  extraStates?: number; // beyond first state
-  w2Count?: number; // total
+  // tax (checkbox-driven)
+  taxSelected?: string[]; // list of service keys
+  taxSpecial?: 'student' | 'senior' | 'none';
+  rentals?: number;
+  extraScheduleC?: number; // beyond first
+  extraStates?: number;
+  w2Count?: number; // total w2
   form1099Count?: number;
   includeStocks?: boolean;
-  includeAuditProtection?: boolean;
-  // immigration (multi-select counts/booleans)
-  immigrationSelected?: string[]; // list of keys (consultation, familyPetition, etc except translations & packageAssistance included as keys too)
-  translationsCount?: number;
-  copiesCount?: number;
-  expedited?: boolean;
+  includeAudit?: boolean;
+  // immigration
+  immigrationSelected?: string[];
+  translations?: number;
   // notary
   notaryDocs?: number;
   travelMiles?: number;
-  includeTravel?: boolean;
 }
 
-export interface BreakdownItem { label: string; amount: number; category: 'tax' | 'notary' | 'immigration'; }
+export interface BreakdownItem { label: string; amount: number; category: 'tax' | 'notary' | 'immigration' | 'other'; }
 
 export function calculateEstimate(inputs: EstimateInputs = {}) {
   const s: Required<EstimateInputs> = {
-    taxBase: 'basic1040',
-    specialCategory: 'none',
-    rentalProps: 0,
-    includeState: false,
+    taxSelected: [],
+    taxSpecial: 'none',
+    rentals: 0,
+    extraScheduleC: 0,
     extraStates: 0,
     w2Count: 2,
     form1099Count: 0,
     includeStocks: false,
-    includeAuditProtection: false,
+    includeAudit: false,
     immigrationSelected: [],
-    translationsCount: 0,
-    copiesCount: 0,
-    expedited: false,
+    translations: 0,
     notaryDocs: 0,
     travelMiles: 0,
-    includeTravel: false,
     ...inputs,
   } as any;
+  let total = 0; const breakdown: BreakdownItem[] = [];
 
-  let total = 0;
-  const breakdown: BreakdownItem[] = [];
-
-  // TAX CALC
-  const specialMap: Record<string, number | undefined> = {
-    studentBasic: PRICING.tax.studentBasic,
-    seniorBasic: PRICING.tax.seniorBasic,
-  };
-  if (s.specialCategory !== 'none' && specialMap[s.specialCategory]) {
-    const price = specialMap[s.specialCategory]!;
-    total += price;
-    breakdown.push({ label: s.specialCategory, amount: price, category: 'tax' });
+  // TAX
+  if (s.taxSpecial !== 'none') {
+    const specialPrice = PRICING.tax.special[s.taxSpecial];
+    total += specialPrice; breakdown.push({ label: `tax:${s.taxSpecial}`, amount: specialPrice, category: 'tax' });
   } else {
-    const baseKey = s.taxBase as keyof typeof PRICING.tax;
-    const basePrice = (PRICING.tax as any)[baseKey] ?? PRICING.tax.basic1040;
-    total += basePrice;
-    breakdown.push({ label: baseKey, amount: basePrice, category: 'tax' });
-  }
-  if (s.rentalProps > 0) {
-    const amt = s.rentalProps * PRICING.tax.rentalProperty;
-    total += amt;
-    breakdown.push({ label: `rental x${s.rentalProps}`, amount: amt, category: 'tax' });
-  }
-  if (s.includeState) {
-    total += PRICING.tax.stateReturn;
-    breakdown.push({ label: 'state return', amount: PRICING.tax.stateReturn, category: 'tax' });
-  }
-  if (s.extraStates > 0) {
-    const amt = s.extraStates * PRICING.tax.addons.multiState;
-    total += amt;
-    breakdown.push({ label: `extra states x${s.extraStates}`, amount: amt, category: 'tax' });
-  }
-  if (s.w2Count > 2) {
-    const extra = (s.w2Count - 2) * PRICING.tax.addons.extraW2;
-    total += extra;
-    breakdown.push({ label: `extra W-2 x${s.w2Count - 2}`, amount: extra, category: 'tax' });
-  }
-  if (s.form1099Count > 0) {
-  const amt = PRICING.tax.addons["1099First"] + Math.max(0, s.form1099Count - 1) * PRICING.tax.addons["1099Additional"];
-    total += amt;
-    breakdown.push({ label: `1099 forms x${s.form1099Count}`, amount: amt, category: 'tax' });
-  }
-  if (s.includeStocks) {
-    total += PRICING.tax.addons.stocks;
-    breakdown.push({ label: 'stocks', amount: PRICING.tax.addons.stocks, category: 'tax' });
-  }
-  if (s.includeAuditProtection) {
-    total += PRICING.tax.addons.auditProtection;
-    breakdown.push({ label: 'audit protection', amount: PRICING.tax.addons.auditProtection, category: 'tax' });
-  }
-
-  // NOTARY CALC
-  if (s.notaryDocs > 0) {
-    const base = PRICING.notary.firstNotarization;
-    const additional = Math.max(0, s.notaryDocs - 1) * PRICING.notary.additionalDoc;
-    const nt = base + additional;
-    total += nt;
-    breakdown.push({ label: `notary docs x${s.notaryDocs}`, amount: nt, category: 'notary' });
-    if (s.includeTravel && s.travelMiles > 0) {
-      const travel = computeTravelFee(s.travelMiles);
-      total += travel;
-      breakdown.push({ label: `travel ${s.travelMiles}mi`, amount: travel, category: 'notary' });
-    }
-  }
-
-  // IMMIGRATION CALC
-  if (s.immigrationSelected.length) {
-    s.immigrationSelected.forEach(key => {
-      const base = (PRICING.immigration as any)[key];
-      if (typeof base === 'number') {
-        total += base;
-        breakdown.push({ label: key, amount: base, category: 'immigration' });
-      }
+    s.taxSelected.forEach(key => {
+      const map: any = PRICING.tax.services;
+      if (map[key]) { total += map[key]; breakdown.push({ label: `tax:${key}`, amount: map[key], category: 'tax' }); }
     });
-    if (s.translationsCount > 0) {
-      const amt = s.translationsCount * PRICING.immigration.documentTranslation;
-      total += amt;
-      breakdown.push({ label: `translations x${s.translationsCount}`, amount: amt, category: 'immigration' });
+    if (s.extraScheduleC > 0) {
+      const amt = s.extraScheduleC * PRICING.tax.services.selfEmploymentAdditional;
+      total += amt; breakdown.push({ label: `extra Schedule C x${s.extraScheduleC}`, amount: amt, category: 'tax' });
     }
-    if (s.copiesCount > 0) {
-      const amt = s.copiesCount * PRICING.immigration.addons.extraCopies;
-      total += amt;
-      breakdown.push({ label: `extra copies x${s.copiesCount}`, amount: amt, category: 'immigration' });
+    if (s.rentals > 0) {
+      const amt = s.rentals * PRICING.tax.services.rentalProperty;
+      total += amt; breakdown.push({ label: `rental properties x${s.rentals}`, amount: amt, category: 'tax' });
     }
-    if (s.expedited) {
-      total += PRICING.immigration.addons.expedited;
-      breakdown.push({ label: 'expedited', amount: PRICING.immigration.addons.expedited, category: 'immigration' });
+    if (s.extraStates > 0) {
+      const amt = s.extraStates * PRICING.tax.services.stateReturn;
+      total += amt; breakdown.push({ label: `extra states x${s.extraStates}`, amount: amt, category: 'tax' });
+    }
+    if (s.w2Count > 2) {
+      const amt = (s.w2Count - 2) * PRICING.tax.addons.extraW2;
+      total += amt; breakdown.push({ label: `extra W-2 x${s.w2Count - 2}`, amount: amt, category: 'tax' });
+    }
+    if (s.form1099Count > 0) {
+      const amt = PRICING.tax.addons['1099First'] + Math.max(0, s.form1099Count - 1) * PRICING.tax.addons['1099Additional'];
+      total += amt; breakdown.push({ label: `1099 forms x${s.form1099Count}`, amount: amt, category: 'tax' });
+    }
+    if (s.includeStocks) { total += PRICING.tax.addons.stocks; breakdown.push({ label: 'stocks', amount: PRICING.tax.addons.stocks, category: 'tax' }); }
+    if (s.includeAudit) { total += PRICING.tax.addons.auditProtection; breakdown.push({ label: 'audit protection', amount: PRICING.tax.addons.auditProtection, category: 'tax' }); }
+  }
+
+  // IMMIGRATION
+  s.immigrationSelected.forEach(key => {
+    const val = (PRICING.immigration as any)[key];
+    if (typeof val === 'number') { total += val; breakdown.push({ label: `immigration:${key}`, amount: val, category: 'immigration' }); }
+  });
+  if (s.translations > 0) {
+    const amt = s.translations * PRICING.immigration.documentTranslation;
+    total += amt; breakdown.push({ label: `translations x${s.translations}`, amount: amt, category: 'immigration' });
+  }
+
+  // NOTARY
+  if (s.notaryDocs > 0) {
+    const base = PRICING.notary.first;
+    const add = Math.max(0, s.notaryDocs - 1) * PRICING.notary.additional;
+    const amt = base + add; total += amt; breakdown.push({ label: `notary docs x${s.notaryDocs}`, amount: amt, category: 'notary' });
+    if (s.travelMiles > 0) {
+      const upTo = Math.min(20, s.travelMiles) * PRICING.notary.travelFirstRate;
+      const beyond = Math.max(0, s.travelMiles - 20) * PRICING.notary.travelReducedRate;
+      const travel = upTo + beyond; total += travel; breakdown.push({ label: `travel ${s.travelMiles}mi`, amount: travel, category: 'notary' });
     }
   }
 
@@ -322,77 +248,59 @@ export function calculateEstimate(inputs: EstimateInputs = {}) {
 export default function PricingCalculator({ initialLang = "en" }: { initialLang?: "en" | "es" }) {
   const [lang, setLang] = useState(initialLang);
   const t = T[lang];
-  const [selectedService, setSelectedService] = useState<'tax' | 'notary' | 'immigration' | 'real_estate'>('tax');
-  // tax state
-  const [taxBase, setTaxBase] = useState('basic1040');
-  const [specialCategory, setSpecialCategory] = useState<'none' | 'studentBasic' | 'seniorBasic'>('none');
-  const [rentalProps, setRentalProps] = useState(0);
-  const [includeState, setIncludeState] = useState(false);
+  const [category, setCategory] = useState<'tax' | 'immigration' | 'notary' | 'real_estate'>('tax');
+  // tax
+  const [taxSelected, setTaxSelected] = useState<string[]>([]);
+  const [taxSpecial, setTaxSpecial] = useState<'student' | 'senior' | 'none'>('none');
+  const [rentals, setRentals] = useState(0);
+  const [extraScheduleC, setExtraScheduleC] = useState(0);
   const [extraStates, setExtraStates] = useState(0);
   const [w2Count, setW2Count] = useState(2);
   const [form1099Count, setForm1099Count] = useState(0);
   const [includeStocks, setIncludeStocks] = useState(false);
-  const [includeAuditProtection, setIncludeAuditProtection] = useState(false);
+  const [includeAudit, setIncludeAudit] = useState(false);
   // immigration
   const [immigrationSelected, setImmigrationSelected] = useState<string[]>([]);
-  const [translationsCount, setTranslationsCount] = useState(0);
-  const [copiesCount, setCopiesCount] = useState(0);
-  const [expedited, setExpedited] = useState(false);
+  const [translations, setTranslations] = useState(0);
   // notary
   const [notaryDocs, setNotaryDocs] = useState(0);
-  const [includeTravel, setIncludeTravel] = useState(false);
   const [travelMiles, setTravelMiles] = useState(0);
   const [showBreakdown, setShowBreakdown] = useState(false);
 
-  const result = useMemo(() => calculateEstimate({
-    taxBase,
-    specialCategory,
-    rentalProps,
-    includeState,
-    extraStates,
-    w2Count,
-    form1099Count,
-    includeStocks,
-    includeAuditProtection,
-    immigrationSelected,
-    translationsCount,
-    copiesCount,
-    expedited,
-    notaryDocs,
-    includeTravel,
-    travelMiles,
-  }), [taxBase, specialCategory, rentalProps, includeState, extraStates, w2Count, form1099Count, includeStocks, includeAuditProtection, immigrationSelected, translationsCount, copiesCount, expedited, notaryDocs, includeTravel, travelMiles]);
+  const result = useMemo(() => calculateEstimate({ taxSelected, taxSpecial, rentals, extraScheduleC, extraStates, w2Count, form1099Count, includeStocks, includeAudit, immigrationSelected, translations, notaryDocs, travelMiles }), [taxSelected, taxSpecial, rentals, extraScheduleC, extraStates, w2Count, form1099Count, includeStocks, includeAudit, immigrationSelected, translations, notaryDocs, travelMiles]);
 
-  const filteredBreakdown = result.breakdown.filter(b => b.category === selectedService);
+  const filteredBreakdown = result.breakdown.filter(b => b.category === category);
   const filteredTotal = filteredBreakdown.reduce((acc, b) => acc + b.amount, 0);
 
-  const toggleImmigration = (key: string) => {
-    setImmigrationSelected(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+  const toggle = (setter: React.Dispatch<React.SetStateAction<string[]>>, arr: string[], key: string) => {
+    setter(arr.includes(key) ? arr.filter(k => k !== key) : [...arr, key]);
   };
 
   const reset = () => {
-    setTaxBase('basic1040');
-    setSpecialCategory('none');
-    setRentalProps(0);
-    setIncludeState(false);
-    setExtraStates(0);
-    setW2Count(2);
-    setForm1099Count(0);
-    setIncludeStocks(false);
-    setIncludeAuditProtection(false);
-    setImmigrationSelected([]);
-    setTranslationsCount(0);
-    setCopiesCount(0);
-    setExpedited(false);
-    setNotaryDocs(0);
-    setIncludeTravel(false);
-    setTravelMiles(0);
+    setCategory('tax');
+    setTaxSelected([]); setTaxSpecial('none'); setRentals(0); setExtraScheduleC(0); setExtraStates(0); setW2Count(2); setForm1099Count(0); setIncludeStocks(false); setIncludeAudit(false);
+    setImmigrationSelected([]); setTranslations(0);
+    setNotaryDocs(0); setTravelMiles(0);
     setShowBreakdown(false);
   };
 
   const copyEstimate = async () => {
-    const text = `${t.estimate}: $${filteredTotal}\n\n${filteredBreakdown.map(b=>`${b.label}: $${b.amount}`).join('\n')}`;
-    try { await navigator.clipboard.writeText(text); alert(t.estimateCopied); } catch { alert(t.copyFail); }
+    const text = `${t.total}: $${filteredTotal}\n${filteredBreakdown.map(b=>`${b.label} $${b.amount}`).join('\n')}`;
+    try { await navigator.clipboard.writeText(text); alert(t.copied); } catch { alert(t.failed); }
+  };
+
+  const [sending, setSending] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+
+  const sendRequest = async () => {
+    if (!email || !name) return;
+    setSending(true);
+    try {
+      await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, message, service: category, estimate: filteredTotal, breakdown: filteredBreakdown }) });
+      alert(t.success); reset();
+    } catch { alert(t.failed); } finally { setSending(false); }
   };
 
   return (
@@ -408,122 +316,96 @@ export default function PricingCalculator({ initialLang = "en" }: { initialLang?
         </button>
       </div>
 
-      {/* SERVICE PICKER */}
-      <div className="mb-8 grid md:grid-cols-3 gap-5 items-end">
-        <div className="md:col-span-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">{t.service}</label>
-          <select
-            value={selectedService}
-            onChange={(e) => { setSelectedService(e.target.value as any); setShowBreakdown(false); }}
-            className="p-3 border rounded-lg bg-white shadow-sm w-full"
-          >
-            <option value="tax">{t.tax}</option>
-            <option value="notary">{t.notary}</option>
-            <option value="immigration">{t.immigration}</option>
-            <option value="real_estate">{t.realEstate}</option>
-          </select>
-        </div>
+      {/* CATEGORY PICKER */}
+      <div className="mb-8">
+        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">{t.category}</label>
+        <select value={category} onChange={e=>{ setCategory(e.target.value as any); setShowBreakdown(false); }} className="p-3 border rounded-lg bg-white shadow-sm w-full max-w-xs">
+          <option value="tax">{t.tax}</option>
+          <option value="immigration">{t.immigration}</option>
+          <option value="notary">{t.notary}</option>
+          <option value="real_estate">{t.realEstate}</option>
+        </select>
       </div>
 
       {/* TAX */}
-      {selectedService === 'tax' && (
-        <div className="mb-10 space-y-8">
-          <h2 className="text-lg font-semibold mb-2">{t.tax}</h2>
+      {category === 'tax' && (
+        <div className="mb-10 space-y-6">
+          <h2 className="text-lg font-semibold">{t.taxHeader}</h2>
           <div className="grid lg:grid-cols-3 gap-8">
-            <div className="space-y-5 lg:col-span-2">
-              <fieldset className="p-4 rounded-xl border bg-white/60 backdrop-blur">
-                <legend className="text-sm font-semibold mb-3">{t.baseReturn}</legend>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {([
-                    ['basic1040', t.basic1040, PRICING.tax.basic1040],
-                    ['1040Dependents', t.withDependents, PRICING.tax["1040Dependents"]],
-                    ['itemized', t.itemized, PRICING.tax.itemized],
-                    ['selfEmployment', t.selfEmployment, PRICING.tax.selfEmployment],
-                  ] as const).map(([key,label,price]) => (
-                    <button key={key} onClick={()=>setTaxBase(key)} className={`text-left px-4 py-3 rounded-lg border transition shadow-sm hover:border-blue-400 ${taxBase===key && specialCategory==='none' ? 'border-blue-500 ring-1 ring-blue-300 bg-blue-50' : 'border-slate-200 bg-white'}`}> 
-                      <span className="block font-medium text-sm">{label}</span>
-                      <span className="text-xs text-slate-500">${price}</span>
-                    </button>
-                  ))}
-                </div>
-                <p className="mt-3 text-[11px] text-slate-500">Selecting a special pricing option below will override this base.</p>
-              </fieldset>
-              <fieldset className="p-4 rounded-xl border bg-white/60 backdrop-blur">
-                <legend className="text-sm font-semibold mb-3">{t.specialCategory}</legend>
-                <div className="flex flex-wrap gap-3">
-                  {(['none','studentBasic','seniorBasic'] as const).map(opt => (
-                    <button key={opt} onClick={()=>setSpecialCategory(opt)} className={`px-4 py-2 rounded-full text-sm border transition ${specialCategory===opt ? 'bg-emerald-600 text-white border-emerald-600 shadow' : 'bg-white border-slate-200 hover:border-emerald-400'}`}>{t[opt as keyof typeof t] || 'None'}</button>
-                  ))}
-                </div>
-              </fieldset>
-              <div className="grid md:grid-cols-2 gap-5">
-                <NumberInput label={t.rentalProps} value={rentalProps} setValue={setRentalProps} />
-                <div className="space-y-3 p-4 rounded-xl border bg-white/60">
-                  <ToggleRow label={t.stateIncluded} checked={includeState} onChange={setIncludeState} />
-                  <NumberInput label={t.extraStates} value={extraStates} setValue={setExtraStates} min={0} />
-                </div>
-                <div className="space-y-3 p-4 rounded-xl border bg-white/60">
-                  <NumberInput label={t.w2Count} value={w2Count} setValue={setW2Count} min={0} />
-                  <NumberInput label={t.form1099Count} value={form1099Count} setValue={setForm1099Count} min={0} />
-                </div>
-                <div className="space-y-3 p-4 rounded-xl border bg-white/60">
-                  <ToggleRow label={t.stocks} checked={includeStocks} onChange={setIncludeStocks} />
-                  <ToggleRow label={t.auditProtection} checked={includeAuditProtection} onChange={setIncludeAuditProtection} />
-                </div>
+            <div className="lg:col-span-2 space-y-6">
+              <div className="grid sm:grid-cols-2 gap-3">
+                {([
+                  ['basic1040','Basic 1040',PRICING.tax.services.basic1040],
+                  ['withDependents','1040 + Dependents',PRICING.tax.services.withDependents],
+                  ['itemized','Itemized (Schedule A)',PRICING.tax.services.itemized],
+                  ['selfEmploymentBase','Self-Employment (Schedule C)',PRICING.tax.services.selfEmploymentBase],
+                ] as const).map(([key,label,price]) => (
+                  <button key={key} onClick={()=>toggle(setTaxSelected,taxSelected,key)} className={`text-left px-4 py-3 rounded-lg border text-sm transition shadow-sm hover:border-blue-400 ${taxSelected.includes(key)?'border-blue-500 ring-1 ring-blue-300 bg-blue-50':'border-slate-200 bg-white'}`}>
+                    <span className="block font-medium">{label}</span>
+                    <span className="text-xs text-slate-500">${price}</span>
+                  </button>
+                ))}
               </div>
+              <fieldset className="p-4 rounded-xl border bg-white/60">
+                <legend className="text-sm font-semibold mb-3">{t.specialPricing}</legend>
+                <div className="flex flex-wrap gap-3">
+                  {(['none','student','senior'] as const).map(opt => (
+                    <button key={opt} onClick={()=>setTaxSpecial(opt)} className={`px-4 py-2 rounded-full text-sm border transition ${taxSpecial===opt?'bg-emerald-600 text-white border-emerald-600 shadow':'bg-white border-slate-200 hover:border-emerald-400'}`}>{t[opt as keyof typeof t]}</button>
+                  ))}
+                </div>
+              </fieldset>
+              {taxSpecial==='none' && (
+                <div className="grid md:grid-cols-2 gap-5">
+                  <NumberInput label={t.rentals} value={rentals} setValue={setRentals} />
+                  <NumberInput label={t.scheduleCs} value={extraScheduleC} setValue={setExtraScheduleC} />
+                  <NumberInput label={t.extraStates} value={extraStates} setValue={setExtraStates} />
+                  <NumberInput label={t.w2Count} value={w2Count} setValue={setW2Count} />
+                  <NumberInput label={t.form1099Count} value={form1099Count} setValue={setForm1099Count} />
+                  <div className="p-4 rounded-xl border bg-white/60 space-y-3">
+                    <ToggleRow label={t.stocks} checked={includeStocks} onChange={setIncludeStocks} />
+                    <ToggleRow label={t.auditProtection} checked={includeAudit} onChange={setIncludeAudit} />
+                  </div>
+                </div>
+              )}
             </div>
-            <aside className="p-4 border rounded-xl bg-gradient-to-br from-slate-50 to-white space-y-3 h-fit">
-              <h3 className="text-sm font-semibold">Reference</h3>
-              <ul className="text-xs space-y-1 text-slate-600">
-                <li>First 2 W-2s included.</li>
-                <li>1099 pricing: first $25, others $10.</li>
-                <li>Multi-state beyond first: ${PRICING.tax.addons.multiState} ea.</li>
-                <li>Rental property: ${PRICING.tax.rentalProperty} each.</li>
-                <li>Audit protection optional.</li>
-              </ul>
+            <aside className="p-4 rounded-xl border bg-gradient-to-br from-slate-50 to-white text-xs space-y-1 h-fit">
+              <div>Self-employment extra Schedule C: ${PRICING.tax.services.selfEmploymentAdditional} each.</div>
+              <div>1099 first ${PRICING.tax.addons['1099First']}, others ${PRICING.tax.addons['1099Additional']}.</div>
+              <div>Extra W-2 ${PRICING.tax.addons.extraW2} (after 2).</div>
+              <div>Audit protection optional.</div>
             </aside>
           </div>
         </div>
       )}
 
       {/* NOTARY */}
-      {selectedService === 'notary' && (
+      {category === 'notary' && (
         <div className="mb-10 space-y-6">
-          <h2 className="text-lg font-semibold mb-2">{t.notary}</h2>
+          <h2 className="text-lg font-semibold mb-2">{t.notaryHeader}</h2>
           <div className="grid md:grid-cols-2 gap-6">
-            <NumberInput label={t.notaryCount} value={notaryDocs} setValue={setNotaryDocs} min={0} />
-            <div className="p-4 rounded-xl border bg-white/60 space-y-3">
-              <ToggleRow label={t.includeTravel} checked={includeTravel} onChange={setIncludeTravel} />
-              {includeTravel && (
-                <NumberInput label={t.travelMiles} value={travelMiles} setValue={setTravelMiles} min={0} />
-              )}
-              <p className="text-[11px] text-slate-500">First doc ${PRICING.notary.firstNotarization}, additional ${PRICING.notary.additionalDoc}. Travel assumption applied.</p>
-            </div>
+            <NumberInput label={t.notaryDocs} value={notaryDocs} setValue={setNotaryDocs} min={0} />
+            <NumberInput label={t.travelMiles} value={travelMiles} setValue={setTravelMiles} min={0} />
+            <p className="text-[11px] text-slate-500 md:col-span-2">First doc ${PRICING.notary.first}. Additional ${PRICING.notary.additional}. Travel: first 20mi @ ${PRICING.notary.travelFirstRate}/mi then ${PRICING.notary.travelReducedRate}/mi.</p>
           </div>
         </div>
       )}
 
       {/* IMMIGRATION */}
-      {selectedService === 'immigration' && (
+    {category === 'immigration' && (
         <div className="mb-12 space-y-8">
-          <h2 className="text-lg font-semibold">{t.immigrationServices}</h2>
+      <h2 className="text-lg font-semibold">{t.immigrationHeader}</h2>
           <div className="grid lg:grid-cols-3 gap-8">
             <div className="space-y-5 lg:col-span-2">
               <div className="grid sm:grid-cols-2 gap-3">
                 {(['consultation','familyPetition','greenCard','citizenship','workPermit','fianceVisa','packageAssistance'] as const).map(key => (
-                  <button key={key} onClick={()=>toggleImmigration(key)} className={`text-left px-4 py-3 rounded-lg border transition shadow-sm hover:border-emerald-400 ${immigrationSelected.includes(key) ? 'border-emerald-500 ring-1 ring-emerald-300 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
+                  <button key={key} onClick={()=>toggle(setImmigrationSelected,immigrationSelected,key)} className={`text-left px-4 py-3 rounded-lg border transition shadow-sm hover:border-emerald-400 ${immigrationSelected.includes(key) ? 'border-emerald-500 ring-1 ring-emerald-300 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
                     <span className="block font-medium text-sm">{t[key as keyof typeof t]}</span>
                     <span className="text-xs text-slate-500">${(PRICING.immigration as any)[key]}</span>
                   </button>
                 ))}
               </div>
               <div className="grid sm:grid-cols-2 gap-5">
-                <NumberInput label={t.translationsCount} value={translationsCount} setValue={setTranslationsCount} min={0} />
-                <NumberInput label={t.copiesCount} value={copiesCount} setValue={setCopiesCount} min={0} />
-                <div className="p-4 rounded-xl border bg-white/60">
-                  <ToggleRow label={t.expedited} checked={expedited} onChange={setExpedited} />
-                  <p className="mt-2 text-[11px] text-slate-500">Translations @ ${PRICING.immigration.documentTranslation} each. Copies @ ${PRICING.immigration.addons.extraCopies} each.</p>
-                </div>
+                <NumberInput label={t.translations} value={translations} setValue={setTranslations} />
               </div>
             </div>
             <aside className="p-4 border rounded-xl bg-gradient-to-br from-emerald-50 to-white space-y-2 h-fit">
@@ -539,17 +421,17 @@ export default function PricingCalculator({ initialLang = "en" }: { initialLang?
       )}
 
       {/* REAL ESTATE */}
-      {selectedService === 'real_estate' && (
+  {category === 'real_estate' && (
         <div className="mb-10 space-y-4">
-          <h2 className="text-lg font-semibold mb-2">{t.realEstate}</h2>
+      <h2 className="text-lg font-semibold mb-2">{t.realEstateHeader}</h2>
           <div className="grid md:grid-cols-2 gap-5">
             <div className="p-5 rounded-xl border bg-white/70 backdrop-blur">
               <h3 className="font-medium text-sm mb-2">Overview</h3>
               <ul className="text-sm text-slate-600 space-y-1">
-                <li>{t.buyerRep}</li>
-                <li>{t.sellerRep}</li>
-                <li>{t.landlordFee}</li>
-                <li>{t.drInvestment}</li>
+        <li>Buyer Representation — {PRICING.realEstate.buyer}</li>
+        <li>Seller Representation — {PRICING.realEstate.seller}</li>
+        <li>Landlord Rental Service — {PRICING.realEstate.landlord}</li>
+        <li>DR Real Estate Investment — {PRICING.realEstate.dr}</li>
               </ul>
             </div>
             <div className="p-5 rounded-xl border bg-gradient-to-br from-sky-50 to-white text-xs text-slate-600">
@@ -562,42 +444,16 @@ export default function PricingCalculator({ initialLang = "en" }: { initialLang?
       {/* RESULT */}
       <div className="flex flex-col lg:flex-row gap-6 lg:items-start">
         <div className="flex gap-3 flex-wrap">
-          <button
-            onClick={() => { /* state auto recalculates */ }}
-            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium shadow"
-          >
-            {t.calculate}
-          </button>
-          <button
-            onClick={reset}
-            className="px-5 py-2.5 bg-white border rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50"
-          >
-            {t.clear}
-          </button>
-          <button
-            onClick={copyEstimate}
-            className="px-5 py-2.5 bg-white border rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50"
-          >
-            {t.copy}
-          </button>
-          <button
-            onClick={() => setShowBreakdown((v) => !v)}
-            className="px-5 py-2.5 bg-white border rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50"
-          >
-            {showBreakdown ? t.hideDetails : t.viewDetails}
-          </button>
+          <button onClick={reset} className="px-5 py-2.5 bg-white border rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50">Reset</button>
+          <button onClick={copyEstimate} className="px-5 py-2.5 bg-white border rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50">{t.copy}</button>
+          <button onClick={() => setShowBreakdown(v=>!v)} className="px-5 py-2.5 bg-white border rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50">{showBreakdown ? t.hide : t.details}</button>
         </div>
         <div className="flex-1 bg-gradient-to-br from-gray-50 to-white border border-gray-100 rounded-2xl p-6 shadow-sm">
           <div className="flex items-baseline gap-4 mb-4">
-            <span className="text-sm font-medium text-gray-500">{t.estimate}</span>
+            <span className="text-sm font-medium text-gray-500">{t.total}</span>
             <span className="text-3xl font-bold tracking-tight text-gray-800">${filteredTotal}</span>
           </div>
-          {/* Contextual payment shortcut */}
-          <div className="mb-4">
-            {selectedService !== 'real_estate' && (
-              <PayButtons service={selectedService as 'tax'|'notary'|'immigration'} />
-            )}
-          </div>
+          {/* Payment buttons removed */}
           {showBreakdown && (
             <div className="max-h-56 overflow-auto pr-1 space-y-2 text-sm">
               {filteredBreakdown.map((b, i) => (
@@ -610,6 +466,17 @@ export default function PricingCalculator({ initialLang = "en" }: { initialLang?
             </div>
           )}
           <p className="mt-5 text-[11px] leading-relaxed text-gray-500 italic">{t.disclaimer}</p>
+          <div className="mt-6 grid md:grid-cols-3 gap-4 text-sm">
+            <input placeholder={t.name} value={name} onChange={e=>setName(e.target.value)} className="p-2 rounded-md border bg-white" />
+            <input placeholder={t.email} value={email} onChange={e=>setEmail(e.target.value)} className="p-2 rounded-md border bg-white" />
+            <input placeholder={t.message} value={message} onChange={e=>setMessage(e.target.value)} className="p-2 rounded-md border bg-white md:col-span-1" />
+            <div className="md:col-span-3 flex flex-wrap gap-3 pt-2">
+              <a href="/" className="px-5 py-2.5 bg-white border rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50">{t.backHome}</a>
+              <button disabled={sending || !email || !name} onClick={sendRequest} className="px-5 py-2.5 bg-emerald-600 disabled:opacity-50 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium shadow">{sending ? t.sending : t.sendEstimate}</button>
+              <button onClick={copyEstimate} className="px-5 py-2.5 bg-white border rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50">{t.copy}</button>
+              <button onClick={()=>setShowBreakdown(v=>!v)} className="px-5 py-2.5 bg-white border rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50">{showBreakdown ? t.hide : t.details}</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

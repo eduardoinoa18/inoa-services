@@ -1,4 +1,3 @@
-import PayButtons from "@/components/PayButtons";
 import Link from "next/link";
 
 export const metadata = {
@@ -128,7 +127,7 @@ export default function Page() {
                 <li><strong>Multi‑State / Amendments:</strong> Additional</li>
                 <li><strong>E‑File Confirmation:</strong> Included</li>
               </ul>
-              <div className="mt-6"><PayButtons /></div>
+              {/* Payment buttons removed */}
               <p className="text-xs text-gray-500 mt-4">Final pricing confirmed after document review. No hidden fees.</p>
             </div>
           </div>

@@ -1,4 +1,3 @@
-import PayButtons from "@/components/PayButtons";
 
 export const metadata = {
   title: "Immigration Form Preparation | Inoa Services",
@@ -77,7 +76,7 @@ export default function Page() {
             <li><strong>Evidence Organization:</strong> Included</li>
             <li><strong>Follow‑Up Clarifications:</strong> Included (reasonable)</li>
           </ul>
-          <div className="mt-6"><PayButtons /></div>
+          {/* Payment buttons removed */}
           <ul className="mt-6 space-y-2 text-xs text-gray-500">
             {disclaimers.map(d => <li key={d}>• {d}</li>)}
           </ul>

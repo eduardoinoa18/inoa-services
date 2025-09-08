@@ -1,7 +1,6 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 import PricingReferenceTable from '../../components/PricingReferenceTable';
-import PayButtons from '../../components/PayButtons';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -24,18 +23,7 @@ export default function PricingPage() {
             Explore transparent, competitive pricing across our service lines. Build a tailored estimate instantly in English or Spanish.
           </p>
         </header>
-        <PricingCalculator initialLang="en" />
-        <div className="flex justify-end">
-          {/* Optional: quick pay buttons for common services */}
-          <div className="rounded-xl border bg-white/60 p-4">
-            <div className="text-sm font-medium mb-2">Quick Pay</div>
-            <div className="flex gap-3">
-              <PayButtons service="tax" />
-              <PayButtons service="notary" />
-              <PayButtons service="immigration" />
-            </div>
-          </div>
-        </div>
+  <PricingCalculator initialLang="en" />
   <PricingReferenceTable />
         <section className="prose prose-slate max-w-none dark:prose-invert">
           <h2 className="text-xl font-semibold">How Estimates Work</h2>
