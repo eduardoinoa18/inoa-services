@@ -42,7 +42,7 @@ export default function Footer() {
       <div className="relative mt-14 pt-6 border-t border-gray-800/70 text-center text-xs text-gray-500">
         <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between max-w-6xl mx-auto px-2">
           <span>© {new Date().getFullYear()} Inoa Services. All rights reserved.</span>
-          <a href="/admin" className="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-gray-700/60 bg-gray-800/40 text-gray-300 hover:text-white hover:border-gray-600 hover:bg-gray-800/70 transition text-[11px] tracking-wide font-medium uppercase">Admin Login</a>
+          <a href="/admin-login" className="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-gray-700/60 bg-gray-800/40 text-gray-300 hover:text-white hover:border-gray-600 hover:bg-gray-800/70 transition text-[11px] tracking-wide font-medium uppercase">Admin Login</a>
         </div>
       </div>
     </footer>

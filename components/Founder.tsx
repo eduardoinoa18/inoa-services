@@ -1,8 +1,10 @@
 "use client";
 import Image from "next/image";
 import Reveal from "./Reveal";
+import { useState } from "react";
 
 export default function Founder() {
+  const [src, setSrc] = useState("/images/founder.jpg");
   return (
     <section id="founder" className="relative py-24 px-4 bg-gradient-to-b from-white via-white to-gray-50 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none opacity-[0.12] bg-[radial-gradient(circle_at_25%_25%,#0D6EFD_0,#0D6EFD_8%,transparent_55%),radial-gradient(circle_at_75%_65%,#198754_0,#198754_10%,transparent_60%)]" />
@@ -11,12 +13,13 @@ export default function Founder() {
           <div className="relative w-60 h-60 md:w-72 md:h-72 mx-auto lg:mx-0">
             <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500/20 via-emerald-500/10 to-amber-400/10 blur-2xl" />
             <Image
-              src="/profile.jpg"
+              src={src}
               alt="Eduardo Inoa — Founder"
               fill
               priority
               sizes="(max-width: 768px) 240px, 288px"
               className="rounded-full object-cover ring-4 ring-white shadow-xl border border-gray-200"
+              onError={() => setSrc("/images/founder-placeholder.svg")}
             />
           </div>
         </Reveal>
