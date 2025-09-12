@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 
 export const runtime = "nodejs";
 
-const handler = NextAuth({
+export const authOptions = {
   providers: [
     Credentials({
       name: "Credentials",
@@ -55,6 +55,8 @@ const handler = NextAuth({
   pages: {
     signIn: "/admin-login",
   },
-});
+} satisfies import('next-auth').NextAuthOptions;
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

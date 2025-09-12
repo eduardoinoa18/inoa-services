@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line } from 'recharts';
+import { Icons } from '@/components/icons';
 
 /************************* Types *************************/
 interface ClientRecord {
@@ -187,9 +188,11 @@ export default function AdminPage() {
     { key: 'settings', label: 'Settings', roles: ['owner','admin'] },
     { key: 'help', label: 'Help', roles: ['owner','admin','staff','viewer'] },
   ];
-  // Validate role to avoid empty menus if stored value is invalid
+  // Effective role prefers authenticated role from session
   const allowedRoles: Role[] = ['owner','admin','staff','viewer'];
-  const validatedRole: Role = allowedRoles.includes(settings.currentRole) ? settings.currentRole : 'owner';
+  const sessionRole = (session?.user as any)?.role as Role | undefined;
+  const storedRole = allowedRoles.includes(settings.currentRole) ? settings.currentRole : 'owner';
+  const validatedRole: Role = allowedRoles.includes(sessionRole as any) ? (sessionRole as Role) : storedRole;
   const visibleNav = useMemo(() => {
     const v = navItems.filter(n => n.roles.includes(validatedRole));
     return v.length ? v : navItems; // fallback to full menu if ever empty
@@ -207,22 +210,19 @@ export default function AdminPage() {
   const currentUserEmail = (session?.user?.email as string) || settings.email; // prefer authenticated email
 
   // simple icons for nav
-  const navIcon = (key: TabKey) => {
-    switch (key) {
-      case 'dashboard': return '🏠';
-      case 'crm': return '📇';
-      case 'calendar': return '📅';
-      case 'website': return '🌐';
-      case 'forms': return '📝';
-      case 'content': return '📚';
-      case 'analytics': return '📈';
-      case 'revenue': return '💵';
-      case 'users': return '👥';
-      case 'settings': return '⚙️';
-      case 'help': return '❓';
-      default: return '•';
-    }
-  };
+  const navIcon = (key: TabKey) => ({
+    dashboard: Icons.dashboard,
+    crm: Icons.crm,
+    calendar: Icons.calendar,
+    website: Icons.website,
+    forms: Icons.forms,
+    content: Icons.content,
+    analytics: Icons.analytics,
+    revenue: Icons.revenue,
+    users: Icons.users,
+    settings: Icons.settings,
+    help: Icons.help,
+  }[key]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-emerald-50/40 flex">

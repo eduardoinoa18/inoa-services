@@ -1,0 +1,13 @@
+{
+  "nav.dashboard": "Dashboard",
+  "nav.crm": "CRM",
+  "nav.calendar": "Calendar",
+  "nav.website": "Website",
+  "nav.forms": "Forms",
+  "nav.content": "Content",
+  "nav.analytics": "Analytics",
+  "nav.revenue": "Revenue",
+  "nav.users": "Users",
+  "nav.settings": "Settings",
+  "nav.help": "Help"
+}

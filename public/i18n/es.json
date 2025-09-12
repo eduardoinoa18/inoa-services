@@ -1,0 +1,13 @@
+{
+  "nav.dashboard": "Panel",
+  "nav.crm": "CRM",
+  "nav.calendar": "Calendario",
+  "nav.website": "Sitio web",
+  "nav.forms": "Formularios",
+  "nav.content": "Contenido",
+  "nav.analytics": "Analítica",
+  "nav.revenue": "Ingresos",
+  "nav.users": "Usuarios",
+  "nav.settings": "Ajustes",
+  "nav.help": "Ayuda"
+}
