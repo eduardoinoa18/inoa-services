@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line } from 'recharts';
 
 /************************* Types *************************/
@@ -13,6 +14,7 @@ interface ClientRecord {
   notes?: string;
   createdAt: string; // ISO Date
   status: 'prospect' | 'active' | 'inactive';
+  assignedTo?: string; // staff email
 }
 
 interface AppointmentRecord {
@@ -49,7 +51,11 @@ interface SettingsData {
   phone: string;
   address: string;
   adminLoginUrl: string;
+  currentRole: Role; // UI/permissions prototype
 }
+
+type Role = 'owner' | 'admin' | 'staff';
+interface StaffUser { id: string; name: string; email: string; role: Role }
 
 /************************* Helpers *************************/
 const uid = () => Math.random().toString(36).slice(2, 11);
@@ -82,21 +88,25 @@ function Pill({children}:{children:any}) { return <span className="px-2.5 py-1 r
 
 /************************* Main Component *************************/
 export default function AdminPage() {
+  const { data: session } = useSession();
   const [tab, setTab] = useState<'dashboard'|'clients'|'calendar'|'sops'|'revenue'|'settings'>('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [clients, setClients] = useState<ClientRecord[]>(() => loadLS('adm_clients', []));
   const [appointments, setAppointments] = useState<AppointmentRecord[]>(() => loadLS('adm_appts', []));
   const [sops, setSops] = useState<SOPRecord[]>(() => loadLS('adm_sops', []));
   const [revenue, setRevenue] = useState<RevenueRecord[]>(() => loadLS('adm_revenue', []));
   const [settings, setSettings] = useState<SettingsData>(() => loadLS('adm_settings', {
-    businessName: 'Inoa Services', ownerName: '', email: '', phone: '', address: '', adminLoginUrl: '/admin'
+    businessName: 'Inoa Services', ownerName: '', email: '', phone: '', address: '', adminLoginUrl: '/admin', currentRole: 'owner' as Role
   }));
+  const [staff, setStaff] = useState<StaffUser[]>(() => loadLS('adm_staff', []));
 
   useEffect(()=>saveLS('adm_clients', clients),[clients]);
   useEffect(()=>saveLS('adm_appts', appointments),[appointments]);
   useEffect(()=>saveLS('adm_sops', sops),[sops]);
   useEffect(()=>saveLS('adm_revenue', revenue),[revenue]);
   useEffect(()=>saveLS('adm_settings', settings),[settings]);
+  useEffect(()=>saveLS('adm_staff', staff),[staff]);
 
   /* Derived metrics */
   const activeClients = clients.filter(c=>c.status==='active').length;
@@ -116,36 +126,62 @@ export default function AdminPage() {
     return Object.entries(map).sort((a,b)=>a[0].localeCompare(b[0])).map(([m,v])=>({month:m, value:v}));
   },[revenue]);
 
+  // Role-based tabs
+  const navItems: { key: typeof tab; label: string; roles: Role[] }[] = [
+    { key: 'dashboard', label: 'Dashboard', roles: ['owner','admin'] },
+    { key: 'clients', label: 'Clients', roles: ['owner','admin','staff'] },
+    { key: 'calendar', label: 'Calendar', roles: ['owner','admin'] },
+    { key: 'sops', label: 'SOPs', roles: ['owner','admin'] },
+    { key: 'revenue', label: 'Revenue', roles: ['owner','admin'] },
+    { key: 'settings', label: 'Settings', roles: ['owner','admin'] },
+  ];
+  const visibleNav = navItems.filter(n => n.roles.includes(settings.currentRole));
+  useEffect(() => {
+    if (!visibleNav.find(n=>n.key===tab)) setTab(visibleNav[0]?.key || 'clients');
+  }, [settings.currentRole]);
+
+  const currentUserEmail = (session?.user?.email as string) || settings.email; // prefer authenticated email
+
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-emerald-50/40">
-      <header className="h-16 px-6 flex items-center justify-between border-b bg-white/70 backdrop-blur z-10">
-        <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-emerald-50/40 flex">
+      {/* Sidebar */}
+      <aside className={`fixed z-30 inset-y-0 left-0 w-64 transform transition-transform duration-200 ease-out bg-white border-r ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:static md:block`}>
+        <div className="h-16 px-4 flex items-center gap-3 border-b">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-500 grid place-items-center text-white font-bold text-sm shadow">IN</div>
-          <span className="font-semibold tracking-tight text-gray-800">Admin</span>
+          <div>
+            <div className="font-semibold tracking-tight text-gray-800">Admin</div>
+            <div className="text-xs text-gray-500 capitalize">{settings.currentRole}</div>
+          </div>
         </div>
-        <nav className="flex gap-1">{
-          [
-            ['dashboard','Dashboard'],
-            ['clients','Clients'],
-            ['calendar','Calendar'],
-            ['sops','SOPs'],
-            ['revenue','Revenue'],
-            ['settings','Settings']
-          ].map(([k,label]) => <TabButton key={k} active={tab===k} onClick={()=>setTab(k as any)}>{label}</TabButton>)
-        }</nav>
-      </header>
-      <main className="flex-1 px-6 py-8 max-w-7xl w-full mx-auto space-y-8">
+        <nav className="p-3 space-y-1">
+          {visibleNav.map(n => (
+            <button key={n.key} onClick={()=>{setTab(n.key); setSidebarOpen(false);}} className={`w-full text-left px-3 py-2 rounded-xl text-sm font-medium ${tab===n.key ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}`}>{n.label}</button>
+          ))}
+        </nav>
+      </aside>
+
+      {/* Main column */}
+      <div className="flex-1 min-w-0 flex flex-col">
+        <header className="h-16 px-4 md:px-6 flex items-center justify-between border-b bg-white/70 backdrop-blur">
+          <button className="md:hidden px-3 py-2 rounded-lg border" onClick={()=>setSidebarOpen(v=>!v)}>Menu</button>
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-gray-600 truncate">{currentUserEmail || 'Set your email in Settings'}</div>
+            <button onClick={()=>signOut({ callbackUrl: '/admin-login' })} className="px-3 py-1.5 rounded-lg border text-xs">Sign out</button>
+          </div>
+        </header>
+        <main className="flex-1 px-4 md:px-6 py-6 max-w-7xl w-full mx-auto space-y-8">
         {tab==='dashboard' && <DashboardTab activeClients={activeClients} totalClients={clients.length} monthRevenue={monthRevenue} topServices={topServices} revenueByMonth={revenueByMonth} />}
-        {tab==='clients' && <ClientsTab clients={clients} setClients={setClients} />}
+        {tab==='clients' && <ClientsTab clients={clients} setClients={setClients} staff={staff} role={settings.currentRole} currentUserEmail={currentUserEmail} />}
         {tab==='calendar' && <CalendarTab appointments={appointments} setAppointments={setAppointments} />}
         {tab==='sops' && <SOPsTab sops={sops} setSops={setSops} />}
         {tab==='revenue' && <RevenueTab revenue={revenue} setRevenue={setRevenue} />}
-        {tab==='settings' && <SettingsTab settings={settings} setSettings={setSettings} />}
-      </main>
-      <footer className="h-14 border-t bg-white/70 backdrop-blur flex items-center justify-between px-6 text-xs text-gray-500">
-        <div>© {new Date().getFullYear()} {settings.businessName || 'Inoa Services'} Admin</div>
-        <a href={settings.adminLoginUrl || '/admin/login'} className="px-3 py-1.5 rounded-lg border border-gray-300 hover:border-gray-400 hover:bg-gray-100 text-gray-700 font-medium">Login</a>
-      </footer>
+        {tab==='settings' && <SettingsTab settings={settings} setSettings={setSettings} staff={staff} setStaff={setStaff} />}
+        </main>
+        <footer className="h-14 border-t bg-white/70 backdrop-blur flex items-center justify-between px-4 md:px-6 text-xs text-gray-500">
+          <div>© {new Date().getFullYear()} {settings.businessName || 'Inoa Services'} Admin</div>
+          <a href={settings.adminLoginUrl || '/admin/login'} className="px-3 py-1.5 rounded-lg border border-gray-300 hover:border-gray-400 hover:bg-gray-100 text-gray-700 font-medium">Login</a>
+        </footer>
+      </div>
     </div>
   );
 }
@@ -201,13 +237,14 @@ function DashboardTab({activeClients,totalClients,monthRevenue,topServices,reven
 }
 
 /************************* Clients (CRM) *************************/
-function ClientsTab({clients,setClients}:{clients:ClientRecord[]; setClients:(c:ClientRecord[])=>void}) {
-  const blank: ClientRecord = { id: uid(), name:'', email:'', phone:'', services:[], tags:[], notes:'', createdAt: new Date().toISOString(), status:'prospect'};
+function ClientsTab({clients,setClients, staff, role, currentUserEmail}:{clients:ClientRecord[]; setClients:(c:ClientRecord[])=>void; staff: StaffUser[]; role: Role; currentUserEmail?: string|null}) {
+  const blank: ClientRecord = { id: uid(), name:'', email:'', phone:'', services:[], tags:[], notes:'', createdAt: new Date().toISOString(), status:'prospect', assignedTo: role==='staff' ? (currentUserEmail||'') : '' };
   const [form, setForm] = useState<ClientRecord>(blank);
   const [editing, setEditing] = useState<string|null>(null);
   const [query, setQuery] = useState('');
 
-  const filtered = clients.filter(c=> [c.name,c.email,c.phone,c.tags.join(' '),c.services.join(' ')].some(v=>v?.toLowerCase().includes(query.toLowerCase())));
+  const roleFiltered = role==='staff' ? clients.filter(c=>c.assignedTo===currentUserEmail) : clients;
+  const filtered = roleFiltered.filter(c=> [c.name,c.email,c.phone,c.tags.join(' '),c.services.join(' ')].some(v=>v?.toLowerCase().includes(query.toLowerCase())));
 
   const submit = (e: any) => {
     e.preventDefault();
@@ -233,6 +270,17 @@ function ClientsTab({clients,setClients}:{clients:ClientRecord[]; setClients:(c:
           <input className="w-full px-3 py-2 rounded-lg border" placeholder="Phone" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} />
           <input className="w-full px-3 py-2 rounded-lg border" placeholder="Services (comma)" value={form.services.join(', ')} onChange={e=>setForm({...form,services: e.target.value.split(',').map(s=>s.trim()).filter(Boolean)})} />
           <input className="w-full px-3 py-2 rounded-lg border" placeholder="Tags (comma)" value={form.tags.join(', ')} onChange={e=>setForm({...form,tags: e.target.value.split(',').map(s=>s.trim()).filter(Boolean)})} />
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600 w-28">Assigned To</label>
+            {role==='staff' ? (
+              <input disabled className="w-full px-3 py-2 rounded-lg border bg-gray-50" value={form.assignedTo || ''} />
+            ) : (
+              <select className="w-full px-3 py-2 rounded-lg border" value={form.assignedTo || ''} onChange={e=>setForm({...form,assignedTo:e.target.value})}>
+                <option value="">Unassigned</option>
+                {staff.map(u=> <option key={u.id} value={u.email}>{u.name || u.email} ({u.role})</option>)}
+              </select>
+            )}
+          </div>
           <textarea className="w-full px-3 py-2 rounded-lg border" rows={3} placeholder="Notes" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} />
           <select className="w-full px-3 py-2 rounded-lg border" value={form.status} onChange={e=>setForm({...form,status:e.target.value as any})}>
             <option value="prospect">Prospect</option>
@@ -255,6 +303,7 @@ function ClientsTab({clients,setClients}:{clients:ClientRecord[]; setClients:(c:
                   <th className="py-2 pr-2">Email</th>
                   <th className="py-2 pr-2">Status</th>
                   <th className="py-2 pr-2">Tags</th>
+                  <th className="py-2 pr-2">Assigned</th>
                   <th className="py-2 pr-2">Actions</th>
                 </tr>
               </thead>
@@ -265,9 +314,10 @@ function ClientsTab({clients,setClients}:{clients:ClientRecord[]; setClients:(c:
                     <td className="py-2 pr-2 text-gray-600">{c.email}</td>
                     <td className="py-2 pr-2"><Pill>{c.status}</Pill></td>
                     <td className="py-2 pr-2"><div className="flex flex-wrap gap-1">{c.tags.map(t=><Pill key={t}>{t}</Pill>)}</div></td>
+                    <td className="py-2 pr-2 text-gray-600">{c.assignedTo || '—'}</td>
                     <td className="py-2 pr-2 flex gap-1">
-                      <button onClick={()=>edit(c)} className="px-2 py-1 rounded-md border text-xs">Edit</button>
-                      <button onClick={()=>remove(c.id)} className="px-2 py-1 rounded-md border text-xs text-red-600">Del</button>
+                      <button onClick={()=>edit(c)} className="px-2 py-1 rounded-md border text-xs" disabled={role==='staff' && c.assignedTo!==currentUserEmail}>Edit</button>
+                      <button onClick={()=>remove(c.id)} className="px-2 py-1 rounded-md border text-xs text-red-600" disabled={role==='staff' && c.assignedTo!==currentUserEmail}>Del</button>
                     </td>
                   </tr>
                 ))}
@@ -442,9 +492,12 @@ function RevenueTab({revenue,setRevenue}:{revenue:RevenueRecord[]; setRevenue:(r
 }
 
 /************************* Settings *************************/
-function SettingsTab({settings,setSettings}:{settings:SettingsData; setSettings:(s:SettingsData)=>void}) {
+function SettingsTab({settings,setSettings, staff, setStaff}:{settings:SettingsData; setSettings:(s:SettingsData)=>void; staff: StaffUser[]; setStaff:(u:StaffUser[])=>void}) {
   const [form, setForm] = useState(settings);
   const save = (e:any) => { e.preventDefault(); setSettings(form); };
+  const [userForm, setUserForm] = useState<StaffUser>({ id: uid(), name: '', email: '', role: 'staff' });
+  const addUser = (e:any) => { e.preventDefault(); if(!userForm.email) return; setStaff([...staff, userForm]); setUserForm({ id: uid(), name:'', email:'', role:'staff' }); };
+  const removeUser = (id:string) => { if(confirm('Remove user?')) setStaff(staff.filter(u=>u.id!==id)); };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -456,6 +509,14 @@ function SettingsTab({settings,setSettings}:{settings:SettingsData; setSettings:
             <input className="px-3 py-2 border rounded-xl" placeholder="Phone" value={form.phone} onChange={e=>setForm({...form, phone:e.target.value})} />
             <input className="px-3 py-2 border rounded-xl" placeholder="Address" value={form.address} onChange={e=>setForm({...form, address:e.target.value})} />
             <input className="px-3 py-2 border rounded-xl" placeholder="Admin Login URL" value={form.adminLoginUrl} onChange={e=>setForm({...form, adminLoginUrl:e.target.value})} />
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600 w-36">Current Role</label>
+              <select className="px-3 py-2 border rounded-xl" value={form.currentRole} onChange={e=>setForm({...form, currentRole: e.target.value as any})}>
+                <option value="owner">Owner</option>
+                <option value="admin">Admin</option>
+                <option value="staff">Staff</option>
+              </select>
+            </div>
             <button className="px-4 py-2 bg-gray-900 text-white rounded-xl self-start text-sm font-medium">Save</button>
         </form>
       </Card>
@@ -470,6 +531,41 @@ function SettingsTab({settings,setSettings}:{settings:SettingsData; setSettings:
             <li>User auth & roles (NextAuth / custom JWT)</li>
             <li>Encryption & audit logging</li>
           </ul>
+        </div>
+      </Card>
+      <Card title="Team (Owner/Admin)">
+        <form onSubmit={addUser} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
+          <input className="px-3 py-2 border rounded-xl md:col-span-1" placeholder="Name" value={userForm.name} onChange={e=>setUserForm({...userForm, name: e.target.value})} />
+          <input className="px-3 py-2 border rounded-xl md:col-span-2" placeholder="Email" value={userForm.email} onChange={e=>setUserForm({...userForm, email: e.target.value})} />
+          <select className="px-3 py-2 border rounded-xl" value={userForm.role} onChange={e=>setUserForm({...userForm, role: e.target.value as any})}>
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+            <option value="owner">Owner</option>
+          </select>
+          <button className="px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-medium">Add</button>
+        </form>
+        <div className="mt-4 overflow-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-500">
+                <th className="py-2 pr-2">Name</th>
+                <th className="py-2 pr-2">Email</th>
+                <th className="py-2 pr-2">Role</th>
+                <th className="py-2 pr-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {staff.map(u => (
+                <tr key={u.id}>
+                  <td className="py-2 pr-2 font-medium text-gray-800">{u.name || '—'}</td>
+                  <td className="py-2 pr-2 text-gray-600">{u.email}</td>
+                  <td className="py-2 pr-2"><Pill>{u.role}</Pill></td>
+                  <td className="py-2 pr-2"><button onClick={()=>removeUser(u.id)} className="px-2 py-1 rounded-md border text-xs text-red-600">Remove</button></td>
+                </tr>
+              ))}
+              {staff.length===0 && <tr><td colSpan={4} className="py-6 text-center text-gray-500">No team members</td></tr>}
+            </tbody>
+          </table>
         </div>
       </Card>
     </div>

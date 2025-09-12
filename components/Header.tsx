@@ -18,7 +18,7 @@ export default function Header() {
         </button>
         <nav className="hidden md:flex items-center gap-4">
           <ul className="flex gap-6 text-gray-700 font-medium">
-            <li><a href="#about" className="hover:text-blue-600">About</a></li>
+            <li><a href="/about" className="hover:text-blue-600">About</a></li>
             <li><a href="#services" className="hover:text-blue-600">Services</a></li>
             <li><a href="#contact" className="hover:text-blue-600">Contact</a></li>
             <li><a href="/pricing" className="hover:text-blue-600">Pricing</a></li>
@@ -28,7 +28,7 @@ export default function Header() {
       </div>
       {open && (
           <div className="md:hidden border-t bg-white">
-            <a href="#about" className="block px-4 py-3" onClick={() => setOpen(false)}>About</a>
+            <a href="/about" className="block px-4 py-3" onClick={() => setOpen(false)}>About</a>
             <a href="#services" className="block px-4 py-3" onClick={() => setOpen(false)}>Services</a>
             <a href="#contact" className="block px-4 py-3" onClick={() => setOpen(false)}>Contact</a>
             <a href="/pricing" className="block px-4 py-3" onClick={() => setOpen(false)}>Pricing</a>

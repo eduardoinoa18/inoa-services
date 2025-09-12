@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 
 const handler = NextAuth({
   providers: [
@@ -12,19 +13,25 @@ const handler = NextAuth({
       async authorize(credentials) {
         const email = credentials?.email as string;
         const password = credentials?.password as string;
-        if (
-          email &&
-          password &&
-          email === process.env.ADMIN_EMAIL &&
-          password === process.env.ADMIN_PASSWORD
-        ) {
-          return { id: "1", name: "Admin", email } as any;
+        if (!email || !password) return null;
+        const envEmail = process.env.ADMIN_EMAIL;
+        const hash = process.env.ADMIN_PASSWORD_HASH;
+        const plain = process.env.ADMIN_PASSWORD; // dev fallback only
+        if (!envEmail) return null;
+        if (email !== envEmail) return null;
+        let ok = false;
+        if (hash) {
+          try { ok = await bcrypt.compare(password, hash); } catch { ok = false; }
+        } else if (plain) {
+          ok = password === plain;
         }
-        return null;
+        if (!ok) return null;
+        return { id: "1", name: "Admin", email } as any;
       },
     }),
   ],
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: 60 * 60 * 2 }, // 2 hours
+  jwt: { maxAge: 60 * 60 * 2 },
   secret: process.env.NEXTAUTH_SECRET,
   pages: {
     signIn: "/admin-login",
