@@ -52,10 +52,46 @@ interface SettingsData {
   address: string;
   adminLoginUrl: string;
   currentRole: Role; // UI/permissions prototype
+  otpExpiryMins?: number;
+  rateLimitWindow?: number;
 }
 
-type Role = 'owner' | 'admin' | 'staff';
+type Role = 'owner' | 'admin' | 'staff' | 'viewer';
 interface StaffUser { id: string; name: string; email: string; role: Role }
+
+// Leads / Forms / Content models
+interface LeadRecord {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  tags: string[];
+  notes?: string;
+  score?: number; // 1-100
+  stage: 'new' | 'contacted' | 'negotiation' | 'won' | 'lost';
+  source?: string;
+  createdAt: string;
+  assignedTo?: string;
+}
+
+interface SubmissionRecord {
+  id: string;
+  type: 'contact' | 'estimate' | 'custom';
+  name: string;
+  email: string;
+  phone?: string;
+  message?: string;
+  payload?: any;
+  createdAt: string;
+  assignedTo?: string;
+}
+
+interface SiteContent {
+  about: string;
+  disclosures: string;
+  navLinks: { label: string; href: string }[];
+  brand: { logoUrl?: string; faviconUrl?: string; primary?: string };
+}
 
 /************************* Helpers *************************/
 const uid = () => Math.random().toString(36).slice(2, 11);
@@ -89,17 +125,21 @@ function Pill({children}:{children:any}) { return <span className="px-2.5 py-1 r
 /************************* Main Component *************************/
 export default function AdminPage() {
   const { data: session } = useSession();
-  const [tab, setTab] = useState<'dashboard'|'clients'|'calendar'|'sops'|'revenue'|'settings'>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [clients, setClients] = useState<ClientRecord[]>(() => loadLS('adm_clients', []));
   const [appointments, setAppointments] = useState<AppointmentRecord[]>(() => loadLS('adm_appts', []));
+  const [leads, setLeads] = useState<LeadRecord[]>(() => loadLS('adm_leads', []));
   const [sops, setSops] = useState<SOPRecord[]>(() => loadLS('adm_sops', []));
   const [revenue, setRevenue] = useState<RevenueRecord[]>(() => loadLS('adm_revenue', []));
   const [settings, setSettings] = useState<SettingsData>(() => loadLS('adm_settings', {
-    businessName: 'Inoa Services', ownerName: '', email: '', phone: '', address: '', adminLoginUrl: '/admin', currentRole: 'owner' as Role
+    businessName: 'Inoa Services', ownerName: '', email: '', phone: '', address: '', adminLoginUrl: '/admin', currentRole: 'owner' as Role, otpExpiryMins: 5, rateLimitWindow: 5
   }));
   const [staff, setStaff] = useState<StaffUser[]>(() => loadLS('adm_staff', []));
+  const [submissions, setSubmissions] = useState<SubmissionRecord[]>(() => loadLS('adm_submissions', []));
+  const [site, setSite] = useState<SiteContent>(() => loadLS('adm_site', { about: '', disclosures: '', navLinks: [
+    {label: 'Home', href: '/'}, {label: 'Services', href: '#services'}, {label: 'Pricing', href: '/pricing'}, {label: 'About', href: '/about'}
+  ], brand: {} }));
 
   useEffect(()=>saveLS('adm_clients', clients),[clients]);
   useEffect(()=>saveLS('adm_appts', appointments),[appointments]);
@@ -107,6 +147,9 @@ export default function AdminPage() {
   useEffect(()=>saveLS('adm_revenue', revenue),[revenue]);
   useEffect(()=>saveLS('adm_settings', settings),[settings]);
   useEffect(()=>saveLS('adm_staff', staff),[staff]);
+  useEffect(()=>saveLS('adm_leads', leads),[leads]);
+  useEffect(()=>saveLS('adm_submissions', submissions),[submissions]);
+  useEffect(()=>saveLS('adm_site', site),[site]);
 
   /* Derived metrics */
   const activeClients = clients.filter(c=>c.status==='active').length;
@@ -127,17 +170,25 @@ export default function AdminPage() {
   },[revenue]);
 
   // Role-based tabs
-  const navItems: { key: typeof tab; label: string; roles: Role[] }[] = [
-    { key: 'dashboard', label: 'Dashboard', roles: ['owner','admin'] },
-    { key: 'clients', label: 'Clients', roles: ['owner','admin','staff'] },
-    { key: 'calendar', label: 'Calendar', roles: ['owner','admin'] },
-    { key: 'sops', label: 'SOPs', roles: ['owner','admin'] },
+  type TabKey = 'dashboard'|'crm'|'calendar'|'website'|'forms'|'content'|'analytics'|'revenue'|'users'|'settings'|'help';
+  const [tab, setTab] = useState<TabKey>('dashboard');
+
+  const navItems: { key: TabKey; label: string; roles: Role[] }[] = [
+    { key: 'dashboard', label: 'Dashboard', roles: ['owner','admin','staff','viewer'] },
+    { key: 'crm', label: 'CRM', roles: ['owner','admin','staff','viewer'] },
+    { key: 'calendar', label: 'Calendar', roles: ['owner','admin','staff','viewer'] },
+    { key: 'website', label: 'Website', roles: ['owner','admin'] },
+    { key: 'forms', label: 'Forms', roles: ['owner','admin'] },
+    { key: 'content', label: 'Content', roles: ['owner','admin'] },
+    { key: 'analytics', label: 'Analytics', roles: ['owner','admin'] },
     { key: 'revenue', label: 'Revenue', roles: ['owner','admin'] },
+    { key: 'users', label: 'Users', roles: ['owner','admin'] },
     { key: 'settings', label: 'Settings', roles: ['owner','admin'] },
+    { key: 'help', label: 'Help', roles: ['owner','admin','staff','viewer'] },
   ];
   const visibleNav = navItems.filter(n => n.roles.includes(settings.currentRole));
   useEffect(() => {
-    if (!visibleNav.find(n=>n.key===tab)) setTab(visibleNav[0]?.key || 'clients');
+  if (!visibleNav.find(n=>n.key===tab)) setTab(visibleNav[0]?.key || 'dashboard');
   }, [settings.currentRole]);
 
   const currentUserEmail = (session?.user?.email as string) || settings.email; // prefer authenticated email
@@ -162,25 +213,137 @@ export default function AdminPage() {
 
       {/* Main column */}
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="h-16 px-4 md:px-6 flex items-center justify-between border-b bg-white/70 backdrop-blur">
+    <header className="h-16 px-4 md:px-6 flex items-center justify-between border-b bg-white/70 backdrop-blur">
           <button className="md:hidden px-3 py-2 rounded-lg border" onClick={()=>setSidebarOpen(v=>!v)}>Menu</button>
           <div className="flex items-center gap-3">
-            <div className="text-sm text-gray-600 truncate">{currentUserEmail || 'Set your email in Settings'}</div>
+      <a href="/" target="_blank" className="px-3 py-1.5 rounded-lg border text-xs">View Landing Page</a>
+      <div className="text-sm text-gray-600 truncate">{currentUserEmail || 'Set your email in Settings'}</div>
             <button onClick={()=>signOut({ callbackUrl: '/admin-login' })} className="px-3 py-1.5 rounded-lg border text-xs">Sign out</button>
           </div>
         </header>
         <main className="flex-1 px-4 md:px-6 py-6 max-w-7xl w-full mx-auto space-y-8">
-        {tab==='dashboard' && <DashboardTab activeClients={activeClients} totalClients={clients.length} monthRevenue={monthRevenue} topServices={topServices} revenueByMonth={revenueByMonth} />}
-        {tab==='clients' && <ClientsTab clients={clients} setClients={setClients} staff={staff} role={settings.currentRole} currentUserEmail={currentUserEmail} />}
-        {tab==='calendar' && <CalendarTab appointments={appointments} setAppointments={setAppointments} />}
-        {tab==='sops' && <SOPsTab sops={sops} setSops={setSops} />}
-        {tab==='revenue' && <RevenueTab revenue={revenue} setRevenue={setRevenue} />}
-        {tab==='settings' && <SettingsTab settings={settings} setSettings={setSettings} staff={staff} setStaff={setStaff} />}
+    {tab==='dashboard' && <DashboardTab activeClients={activeClients} totalClients={clients.length} monthRevenue={monthRevenue} topServices={topServices} revenueByMonth={revenueByMonth} />}
+    {tab==='crm' && <CRMTab leads={leads} setLeads={setLeads} clients={clients} setClients={setClients} staff={staff} role={settings.currentRole} currentUserEmail={currentUserEmail} />}
+    {tab==='calendar' && <CalendarTab appointments={appointments} setAppointments={setAppointments} />}
+    {tab==='website' && <WebsiteTab site={site} setSite={setSite} />}
+    {tab==='forms' && <FormsTab submissions={submissions} setSubmissions={setSubmissions} />}
+    {tab==='content' && <ContentTab sops={sops} setSops={setSops} />}
+    {tab==='analytics' && <AnalyticsTab leads={leads} revenueByMonth={revenueByMonth} topServices={topServices} />}
+    {tab==='revenue' && <RevenueTab revenue={revenue} setRevenue={setRevenue} />}
+    {tab==='users' && <UsersTab staff={staff} setStaff={setStaff} />}
+    {tab==='settings' && <SettingsTab settings={settings} setSettings={setSettings} staff={staff} setStaff={setStaff} />}
+    {tab==='help' && <HelpTab />}
         </main>
         <footer className="h-14 border-t bg-white/70 backdrop-blur flex items-center justify-between px-4 md:px-6 text-xs text-gray-500">
           <div>© {new Date().getFullYear()} {settings.businessName || 'Inoa Services'} Admin</div>
           <a href={settings.adminLoginUrl || '/admin/login'} className="px-3 py-1.5 rounded-lg border border-gray-300 hover:border-gray-400 hover:bg-gray-100 text-gray-700 font-medium">Login</a>
         </footer>
+      </div>
+    </div>
+  );
+}
+/************************* CRM (Leads + Clients) *************************/
+function CRMTab({leads,setLeads,clients,setClients, staff, role, currentUserEmail}:{leads:LeadRecord[]; setLeads:(l:LeadRecord[])=>void; clients:ClientRecord[]; setClients:(c:ClientRecord[])=>void; staff:StaffUser[]; role:Role; currentUserEmail?:string|null}){
+  const [inner, setInner] = useState<'leads'|'clients'>('leads');
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        <TabButton active={inner==='leads'} onClick={()=>setInner('leads')}>Leads</TabButton>
+        <TabButton active={inner==='clients'} onClick={()=>setInner('clients')}>Clients</TabButton>
+      </div>
+      {inner==='leads' ? (
+        <LeadsTab leads={leads} setLeads={setLeads} staff={staff} role={role} currentUserEmail={currentUserEmail} />
+      ) : (
+        <ClientsTab clients={clients} setClients={setClients} staff={staff} role={role} currentUserEmail={currentUserEmail} />
+      )}
+    </div>
+  );
+}
+
+function LeadsTab({leads,setLeads, staff, role, currentUserEmail}:{leads:LeadRecord[]; setLeads:(l:LeadRecord[])=>void; staff:StaffUser[]; role:Role; currentUserEmail?:string|null}){
+  const blank: LeadRecord = { id: uid(), name:'', email:'', phone:'', tags:[], notes:'', score:50, stage:'new', source:'', createdAt: new Date().toISOString(), assignedTo: role==='staff' ? (currentUserEmail||'') : '' };
+  const [form, setForm] = useState<LeadRecord>(blank);
+  const [editing, setEditing] = useState<string|null>(null);
+  const [query, setQuery] = useState('');
+  const canEdit = role==='owner' || role==='admin' || role==='staff';
+  const roleFiltered = role==='staff' ? leads.filter(l=>l.assignedTo===currentUserEmail) : leads;
+  const filtered = roleFiltered.filter(l=> [l.name,l.email,l.phone,l.tags.join(' '),l.source,l.stage].some(v=>v?.toLowerCase().includes(query.toLowerCase())));
+  const submit = (e:any)=>{ e.preventDefault(); if(!canEdit) return; if(!form.name||!form.email) return; if(editing){ setLeads(leads.map(l=>l.id===editing?{...form,id:editing}:l)); } else { setLeads([...leads, form]); } setForm({...blank,id:uid()}); setEditing(null); };
+  const edit = (l:LeadRecord)=>{ if(!canEdit) return; setForm(l); setEditing(l.id); };
+  const remove = (id:string)=>{ if(!canEdit) return; if(confirm('Delete lead?')) setLeads(leads.filter(l=>l.id!==id)); };
+  return (
+    <div className="grid lg:grid-cols-3 gap-6 items-start">
+      <Card title={editing? 'Edit Lead':'New Lead'} className="lg:col-span-1 sticky top-4">
+        <form onSubmit={submit} className="space-y-3">
+          <input className="w-full px-3 py-2 rounded-lg border" placeholder="Name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} disabled={!canEdit} />
+          <input className="w-full px-3 py-2 rounded-lg border" placeholder="Email" type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} disabled={!canEdit} />
+          <input className="w-full px-3 py-2 rounded-lg border" placeholder="Phone" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} disabled={!canEdit} />
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600 w-24">Stage</label>
+            <select className="w-full px-3 py-2 rounded-lg border" value={form.stage} onChange={e=>setForm({...form,stage:e.target.value as any})} disabled={!canEdit}>
+              <option value="new">New</option>
+              <option value="contacted">Contacted</option>
+              <option value="negotiation">Negotiation</option>
+              <option value="won">Won</option>
+              <option value="lost">Lost</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600 w-24">Score</label>
+            <input type="number" min={0} max={100} className="w-full px-3 py-2 rounded-lg border" value={form.score||0} onChange={e=>setForm({...form,score:Number(e.target.value)})} disabled={!canEdit} />
+          </div>
+          <input className="w-full px-3 py-2 rounded-lg border" placeholder="Tags (comma)" value={form.tags.join(', ')} onChange={e=>setForm({...form,tags:e.target.value.split(',').map(s=>s.trim()).filter(Boolean)})} disabled={!canEdit} />
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600 w-24">Assigned</label>
+            {role==='staff' ? (
+              <input disabled className="w-full px-3 py-2 rounded-lg border bg-gray-50" value={form.assignedTo || ''} />
+            ) : (
+              <select className="w-full px-3 py-2 rounded-lg border" value={form.assignedTo || ''} onChange={e=>setForm({...form,assignedTo:e.target.value})}>
+                <option value="">Unassigned</option>
+                {staff.map(u=> <option key={u.id} value={u.email}>{u.name || u.email} ({u.role})</option>)}
+              </select>
+            )}
+          </div>
+          <textarea className="w-full px-3 py-2 rounded-lg border" rows={3} placeholder="Notes" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} disabled={!canEdit} />
+          <div className="flex gap-3 pt-2">
+            <button className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium" disabled={!canEdit}>{editing? 'Update':'Add Lead'}</button>
+            {editing && <button type="button" onClick={()=>{setForm({...blank,id:uid()}); setEditing(null);}} className="px-3 py-2 rounded-lg border text-sm">Cancel</button>}
+          </div>
+        </form>
+      </Card>
+      <div className="lg:col-span-2 space-y-4">
+        <Card className="sticky top-4" subtle actions={<input placeholder="Search" className="px-3 py-2 rounded-lg border text-sm" value={query} onChange={e=>setQuery(e.target.value)} />}> 
+          <div className="overflow-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-500">
+                  <th className="py-2 pr-2">Name</th>
+                  <th className="py-2 pr-2">Email</th>
+                  <th className="py-2 pr-2">Stage</th>
+                  <th className="py-2 pr-2">Score</th>
+                  <th className="py-2 pr-2">Assigned</th>
+                  <th className="py-2 pr-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {filtered.map(l=> (
+                  <tr key={l.id} className="hover:bg-gray-50/80">
+                    <td className="py-2 pr-2 font-medium text-gray-800">{l.name}</td>
+                    <td className="py-2 pr-2 text-gray-600">{l.email}</td>
+                    <td className="py-2 pr-2"><Pill>{l.stage}</Pill></td>
+                    <td className="py-2 pr-2 text-gray-600">{l.score ?? '—'}</td>
+                    <td className="py-2 pr-2 text-gray-600">{l.assignedTo || '—'}</td>
+                    <td className="py-2 pr-2 flex gap-1">
+                      <button onClick={()=>edit(l)} className="px-2 py-1 rounded-md border text-xs" disabled={!canEdit || (role==='staff' && l.assignedTo!==currentUserEmail)}>Edit</button>
+                      <button onClick={()=>remove(l.id)} className="px-2 py-1 rounded-md border text-xs text-red-600" disabled={!canEdit || (role==='staff' && l.assignedTo!==currentUserEmail)}>Del</button>
+                    </td>
+                  </tr>
+                ))}
+                {filtered.length===0 && <tr><td colSpan={6} className="py-6 text-center text-gray-500">No leads</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       </div>
     </div>
   );
@@ -392,8 +555,8 @@ function CalendarTab({appointments,setAppointments}:{appointments:AppointmentRec
   );
 }
 
-/************************* SOPs *************************/
-function SOPsTab({sops,setSops}:{sops:SOPRecord[]; setSops:(s:SOPRecord[])=>void}) {
+/************************* Content (SOPs etc.) *************************/
+function ContentTab({sops,setSops}:{sops:SOPRecord[]; setSops:(s:SOPRecord[])=>void}) {
   const blank: SOPRecord = { id: uid(), title:'', category:'General', content:'', link:'', createdAt: new Date().toISOString() };
   const [form, setForm] = useState<SOPRecord>(blank);
   const [filter, setFilter] = useState('');
@@ -435,6 +598,202 @@ function SOPsTab({sops,setSops}:{sops:SOPRecord[]; setSops:(s:SOPRecord[])=>void
           </div>
         </Card>
       </div>
+    </div>
+  );
+}
+
+/************************* Website Management *************************/
+function WebsiteTab({site,setSite}:{site:SiteContent; setSite:(s:SiteContent)=>void}){
+  const [form, setForm] = useState(site);
+  const save = (e:any)=>{ e.preventDefault(); setSite(form); };
+  return (
+    <div className="grid lg:grid-cols-2 gap-6 items-start">
+      <Card title="Content Editor">
+        <form onSubmit={save} className="grid gap-3">
+          <label className="text-sm font-medium text-gray-700">About Us Content</label>
+          <textarea className="w-full px-3 py-2 rounded-lg border min-h-[160px]" value={form.about} onChange={e=>setForm({...form,about:e.target.value})} />
+          <label className="text-sm font-medium text-gray-700">Disclosures Content</label>
+          <textarea className="w-full px-3 py-2 rounded-lg border min-h-[160px]" value={form.disclosures} onChange={e=>setForm({...form,disclosures:e.target.value})} />
+          <button className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium w-fit">Save</button>
+        </form>
+      </Card>
+      <Card title="Brand & Navigation">
+        <div className="space-y-3">
+          <div className="grid gap-2">
+            <label className="text-sm text-gray-700">Logo URL</label>
+            <input className="px-3 py-2 border rounded-lg" value={form.brand.logoUrl||''} onChange={e=>setForm({...form, brand:{...form.brand, logoUrl:e.target.value}})} />
+          </div>
+          <div className="grid gap-2">
+            <label className="text-sm text-gray-700">Favicon URL</label>
+            <input className="px-3 py-2 border rounded-lg" value={form.brand.faviconUrl||''} onChange={e=>setForm({...form, brand:{...form.brand, faviconUrl:e.target.value}})} />
+          </div>
+          <div className="grid gap-2">
+            <label className="text-sm text-gray-700">Primary Color (hex)</label>
+            <input className="px-3 py-2 border rounded-lg" value={form.brand.primary||''} onChange={e=>setForm({...form, brand:{...form.brand, primary:e.target.value}})} />
+          </div>
+          <div className="grid gap-2">
+            <label className="text-sm text-gray-700">Header Links</label>
+            <div className="space-y-2">
+              {form.navLinks.map((l,idx)=> (
+                <div key={idx} className="flex gap-2">
+                  <input className="px-2 py-1 border rounded w-40" value={l.label} onChange={e=>{
+                    const arr=[...form.navLinks]; arr[idx]={...l,label:e.target.value}; setForm({...form,navLinks:arr});
+                  }} />
+                  <input className="px-2 py-1 border rounded flex-1" value={l.href} onChange={e=>{
+                    const arr=[...form.navLinks]; arr[idx]={...l,href:e.target.value}; setForm({...form,navLinks:arr});
+                  }} />
+                </div>
+              ))}
+              <button className="px-3 py-1.5 rounded border text-xs" onClick={()=>setForm({...form, navLinks:[...form.navLinks,{label:'New', href:'/'}]})}>Add Link</button>
+            </div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/************************* Forms & Submissions *************************/
+function FormsTab({submissions,setSubmissions}:{submissions:SubmissionRecord[]; setSubmissions:(s:SubmissionRecord[])=>void}){
+  const remove = (id:string)=>{ if(confirm('Delete submission?')) setSubmissions(submissions.filter(s=>s.id!==id)); };
+  return (
+    <div className="space-y-4">
+      <Card title="Submissions">
+        <div className="text-sm text-gray-600 mb-3">Landing form submissions would appear here when wired to store. You can also import older records as CSV.</div>
+        <div className="overflow-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-500">
+                <th className="py-2 pr-2">When</th>
+                <th className="py-2 pr-2">Type</th>
+                <th className="py-2 pr-2">Name</th>
+                <th className="py-2 pr-2">Email</th>
+                <th className="py-2 pr-2">Message</th>
+                <th className="py-2 pr-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {submissions.map(s=> (
+                <tr key={s.id} className="hover:bg-gray-50/80">
+                  <td className="py-2 pr-2 whitespace-nowrap text-gray-600">{s.createdAt.slice(0,16).replace('T',' ')}</td>
+                  <td className="py-2 pr-2"><Pill>{s.type}</Pill></td>
+                  <td className="py-2 pr-2 text-gray-800">{s.name}</td>
+                  <td className="py-2 pr-2 text-gray-600">{s.email}</td>
+                  <td className="py-2 pr-2 text-gray-600 max-w-[280px]">{s.message?.slice(0,80) || '—'}</td>
+                  <td className="py-2 pr-2"><button onClick={()=>remove(s.id)} className="px-2 py-1 rounded-md border text-xs text-red-600">Del</button></td>
+                </tr>
+              ))}
+              {submissions.length===0 && <tr><td colSpan={6} className="py-6 text-center text-gray-500">No submissions</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/************************* Analytics *************************/
+function AnalyticsTab({leads,revenueByMonth,topServices}:{leads:LeadRecord[]; revenueByMonth:{month:string;value:number}[]; topServices:[string,number][]}){
+  const byStage = useMemo(()=>{
+    const map:Record<string,number>={};
+    leads.forEach(l=>{ map[l.stage]=(map[l.stage]||0)+1; });
+    return Object.entries(map).map(([stage,count])=>({stage,count}));
+  },[leads]);
+  return (
+    <div className="grid lg:grid-cols-3 gap-6">
+      <Card title="Leads by Stage" className="lg:col-span-1">
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={byStage}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="stage" fontSize={12} />
+              <YAxis fontSize={12} />
+              <Tooltip />
+              <Bar dataKey="count" fill="#10b981" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+      <Card title="Revenue Trend" className="lg:col-span-2">
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={revenueByMonth}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="month" fontSize={12} />
+              <YAxis fontSize={12} tickFormatter={v=>'$'+v} />
+              <Tooltip formatter={(v)=>currency(Number(v))} />
+              <Line type="monotone" dataKey="value" stroke="#0d6efd" strokeWidth={3} dot={{r:4}} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/************************* Users *************************/
+function UsersTab({staff,setStaff}:{staff:StaffUser[]; setStaff:(u:StaffUser[])=>void}){
+  const [userForm, setUserForm] = useState<StaffUser>({ id: uid(), name: '', email: '', role: 'staff' });
+  const add = (e:any)=>{ e.preventDefault(); if(!userForm.email) return; setStaff([...staff, userForm]); setUserForm({ id: uid(), name:'', email:'', role:'staff' }); };
+  const remove = (id:string)=>{ if(confirm('Remove user?')) setStaff(staff.filter(u=>u.id!==id)); };
+  return (
+    <div className="space-y-4">
+      <Card title="Team">
+        <form onSubmit={add} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
+          <input className="px-3 py-2 border rounded-xl md:col-span-1" placeholder="Name" value={userForm.name} onChange={e=>setUserForm({...userForm, name: e.target.value})} />
+          <input className="px-3 py-2 border rounded-xl md:col-span-2" placeholder="Email" value={userForm.email} onChange={e=>setUserForm({...userForm, email: e.target.value})} />
+          <select className="px-3 py-2 border rounded-xl" value={userForm.role} onChange={e=>setUserForm({...userForm, role: e.target.value as any})}>
+            <option value="viewer">Viewer</option>
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+            <option value="owner">Owner</option>
+          </select>
+          <button className="px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-medium">Add</button>
+        </form>
+        <div className="mt-4 overflow-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-500">
+                <th className="py-2 pr-2">Name</th>
+                <th className="py-2 pr-2">Email</th>
+                <th className="py-2 pr-2">Role</th>
+                <th className="py-2 pr-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {staff.map(u => (
+                <tr key={u.id}>
+                  <td className="py-2 pr-2 font-medium text-gray-800">{u.name || '—'}</td>
+                  <td className="py-2 pr-2 text-gray-600">{u.email}</td>
+                  <td className="py-2 pr-2"><Pill>{u.role}</Pill></td>
+                  <td className="py-2 pr-2"><button onClick={()=>remove(u.id)} className="px-2 py-1 rounded-md border text-xs text-red-600">Remove</button></td>
+                </tr>
+              ))}
+              {staff.length===0 && <tr><td colSpan={4} className="py-6 text-center text-gray-500">No team members</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/************************* Help *************************/
+function HelpTab(){
+  return (
+    <div className="space-y-4">
+      <Card title="Help & Support">
+        <div className="text-sm text-gray-700 space-y-2">
+          <p>Welcome to the Admin. This is a prototype control panel with local storage. Planned upgrades include database persistence, file storage, and calendar sync.</p>
+          <ul className="list-disc ml-5 space-y-1 text-gray-600">
+            <li>CRM: manage Leads and Clients; assign to staff</li>
+            <li>Website: edit About/Disclosures, brand, and navigation</li>
+            <li>Forms: see submissions from the landing page</li>
+            <li>Analytics: overview widgets and trends</li>
+          </ul>
+          <p>If you run into issues, try refreshing the page. Data here is kept in your browser only for now.</p>
+        </div>
+      </Card>
     </div>
   );
 }
@@ -515,7 +874,18 @@ function SettingsTab({settings,setSettings, staff, setStaff}:{settings:SettingsD
                 <option value="owner">Owner</option>
                 <option value="admin">Admin</option>
                 <option value="staff">Staff</option>
+                <option value="viewer">Viewer</option>
               </select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600 w-36">OTP Expiry (mins)</label>
+                <input type="number" className="px-3 py-2 border rounded-xl w-28" value={form.otpExpiryMins||5} onChange={e=>setForm({...form, otpExpiryMins:Number(e.target.value)})} />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600 w-36">Rate Limit Window (mins)</label>
+                <input type="number" className="px-3 py-2 border rounded-xl w-28" value={form.rateLimitWindow||5} onChange={e=>setForm({...form, rateLimitWindow:Number(e.target.value)})} />
+              </div>
             </div>
             <button className="px-4 py-2 bg-gray-900 text-white rounded-xl self-start text-sm font-medium">Save</button>
         </form>
@@ -533,12 +903,13 @@ function SettingsTab({settings,setSettings, staff, setStaff}:{settings:SettingsD
           </ul>
         </div>
       </Card>
-      <Card title="Team (Owner/Admin)">
+  <Card title="Team (Owner/Admin)">
         <form onSubmit={addUser} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
           <input className="px-3 py-2 border rounded-xl md:col-span-1" placeholder="Name" value={userForm.name} onChange={e=>setUserForm({...userForm, name: e.target.value})} />
           <input className="px-3 py-2 border rounded-xl md:col-span-2" placeholder="Email" value={userForm.email} onChange={e=>setUserForm({...userForm, email: e.target.value})} />
           <select className="px-3 py-2 border rounded-xl" value={userForm.role} onChange={e=>setUserForm({...userForm, role: e.target.value as any})}>
-            <option value="staff">Staff</option>
+    <option value="viewer">Viewer</option>
+    <option value="staff">Staff</option>
             <option value="admin">Admin</option>
             <option value="owner">Owner</option>
           </select>
