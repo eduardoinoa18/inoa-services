@@ -187,10 +187,22 @@ export default function AdminPage() {
     { key: 'settings', label: 'Settings', roles: ['owner','admin'] },
     { key: 'help', label: 'Help', roles: ['owner','admin','staff','viewer'] },
   ];
-  const visibleNav = navItems.filter(n => n.roles.includes(settings.currentRole));
+  // Validate role to avoid empty menus if stored value is invalid
+  const allowedRoles: Role[] = ['owner','admin','staff','viewer'];
+  const validatedRole: Role = allowedRoles.includes(settings.currentRole) ? settings.currentRole : 'owner';
+  const visibleNav = useMemo(() => {
+    const v = navItems.filter(n => n.roles.includes(validatedRole));
+    return v.length ? v : navItems; // fallback to full menu if ever empty
+  }, [validatedRole]);
   useEffect(() => {
-  if (!visibleNav.find(n=>n.key===tab)) setTab(visibleNav[0]?.key || 'dashboard');
-  }, [settings.currentRole]);
+    if (!visibleNav.find(n=>n.key===tab)) setTab(visibleNav[0]?.key || 'dashboard');
+  }, [validatedRole, visibleNav.length]);
+
+  // Persist collapsed preference
+  useEffect(() => {
+    try { const raw = localStorage.getItem('adm_ui_collapsed'); if (raw!=null) setCollapsed(Boolean(JSON.parse(raw))); } catch {}
+  }, []);
+  useEffect(() => { try { localStorage.setItem('adm_ui_collapsed', JSON.stringify(collapsed)); } catch {} }, [collapsed]);
 
   const currentUserEmail = (session?.user?.email as string) || settings.email; // prefer authenticated email
 
@@ -215,6 +227,12 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-emerald-50/40 flex">
       {/* Sidebar */}
+      {/* Mobile overlay */}
+      <div
+        className={`fixed inset-0 bg-black/20 md:hidden transition-opacity ${sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        onClick={()=>setSidebarOpen(false)}
+        aria-hidden={!sidebarOpen}
+      />
       <aside
         className={`fixed z-30 inset-y-0 left-0 ${collapsed ? 'w-16' : 'w-64'} transform transition-all duration-200 ease-out bg-white border-r
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:static md:block`}
@@ -225,7 +243,7 @@ export default function AdminPage() {
             {!collapsed && (
               <div>
                 <div className="font-semibold tracking-tight text-gray-800">Admin</div>
-                <div className="text-xs text-gray-500 capitalize">{settings.currentRole}</div>
+        <div className="text-xs text-gray-500 capitalize">{validatedRole}</div>
               </div>
             )}
           </div>
@@ -234,6 +252,7 @@ export default function AdminPage() {
             className="hidden md:inline-flex items-center justify-center w-8 h-8 rounded-lg border text-gray-600 hover:bg-gray-50"
             title={collapsed ? 'Expand menu' : 'Collapse menu'}
             onClick={()=>setCollapsed(v=>!v)}
+      aria-pressed={collapsed}
           >
             {collapsed ? '›' : '‹'}
           </button>
