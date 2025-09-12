@@ -125,7 +125,8 @@ function Pill({children}:{children:any}) { return <span className="px-2.5 py-1 r
 /************************* Main Component *************************/
 export default function AdminPage() {
   const { data: session } = useSession();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // mobile overlay
+  const [collapsed, setCollapsed] = useState(false); // desktop rail collapse
 
   const [clients, setClients] = useState<ClientRecord[]>(() => loadLS('adm_clients', []));
   const [appointments, setAppointments] = useState<AppointmentRecord[]>(() => loadLS('adm_appts', []));
@@ -193,27 +194,70 @@ export default function AdminPage() {
 
   const currentUserEmail = (session?.user?.email as string) || settings.email; // prefer authenticated email
 
+  // simple icons for nav
+  const navIcon = (key: TabKey) => {
+    switch (key) {
+      case 'dashboard': return '🏠';
+      case 'crm': return '📇';
+      case 'calendar': return '📅';
+      case 'website': return '🌐';
+      case 'forms': return '📝';
+      case 'content': return '📚';
+      case 'analytics': return '📈';
+      case 'revenue': return '💵';
+      case 'users': return '👥';
+      case 'settings': return '⚙️';
+      case 'help': return '❓';
+      default: return '•';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-emerald-50/40 flex">
       {/* Sidebar */}
-      <aside className={`fixed z-30 inset-y-0 left-0 w-64 transform transition-transform duration-200 ease-out bg-white border-r ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:static md:block`}>
-        <div className="h-16 px-4 flex items-center gap-3 border-b">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-500 grid place-items-center text-white font-bold text-sm shadow">IN</div>
-          <div>
-            <div className="font-semibold tracking-tight text-gray-800">Admin</div>
-            <div className="text-xs text-gray-500 capitalize">{settings.currentRole}</div>
+      <aside
+        className={`fixed z-30 inset-y-0 left-0 ${collapsed ? 'w-16' : 'w-64'} transform transition-all duration-200 ease-out bg-white border-r
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:static md:block`}
+      >
+        <div className={`h-16 ${collapsed ? 'px-2' : 'px-4'} flex items-center justify-between gap-3 border-b`}>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-500 grid place-items-center text-white font-bold text-sm shadow">IN</div>
+            {!collapsed && (
+              <div>
+                <div className="font-semibold tracking-tight text-gray-800">Admin</div>
+                <div className="text-xs text-gray-500 capitalize">{settings.currentRole}</div>
+              </div>
+            )}
           </div>
+          {/* Collapse toggle (desktop) */}
+          <button
+            className="hidden md:inline-flex items-center justify-center w-8 h-8 rounded-lg border text-gray-600 hover:bg-gray-50"
+            title={collapsed ? 'Expand menu' : 'Collapse menu'}
+            onClick={()=>setCollapsed(v=>!v)}
+          >
+            {collapsed ? '›' : '‹'}
+          </button>
         </div>
-        <nav className="p-3 space-y-1">
+        <nav className={`${collapsed ? 'p-2' : 'p-3'} space-y-1`}> 
           {visibleNav.map(n => (
-            <button key={n.key} onClick={()=>{setTab(n.key); setSidebarOpen(false);}} className={`w-full text-left px-3 py-2 rounded-xl text-sm font-medium ${tab===n.key ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}`}>{n.label}</button>
+            <button
+              key={n.key}
+              title={n.label}
+              onClick={()=>{setTab(n.key); setSidebarOpen(false);} }
+              className={`w-full ${collapsed ? 'px-2' : 'px-3'} py-2 rounded-xl text-sm font-medium flex items-center gap-3
+                ${tab===n.key ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+              aria-current={tab===n.key}
+            >
+              <span className="text-base leading-none w-5 text-center">{navIcon(n.key)}</span>
+              {!collapsed && <span className="truncate">{n.label}</span>}
+            </button>
           ))}
         </nav>
       </aside>
 
       {/* Main column */}
       <div className="flex-1 min-w-0 flex flex-col">
-    <header className="h-16 px-4 md:px-6 flex items-center justify-between border-b bg-white/70 backdrop-blur">
+  <header className="h-16 px-4 md:px-6 flex items-center justify-between border-b bg-white/70 backdrop-blur">
           <button className="md:hidden px-3 py-2 rounded-lg border" onClick={()=>setSidebarOpen(v=>!v)}>Menu</button>
           <div className="flex items-center gap-3">
       <a href="/" target="_blank" className="px-3 py-1.5 rounded-lg border text-xs">View Landing Page</a>
