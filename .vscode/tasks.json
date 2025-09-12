@@ -8,6 +8,20 @@
 			"problemMatcher": [
 				"$eslint-stylish"
 			]
+		},
+		{
+			"label": "dev",
+			"type": "shell",
+			"command": "npm run dev",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "build",
+			"type": "shell",
+			"command": "npm run build",
+			"group": "build",
+			"problemMatcher": []
 		}
 	]
 }
