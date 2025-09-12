@@ -28,13 +28,30 @@ const handler = NextAuth({
           ok = password === plain;
         }
         if (!ok) return null;
-        return { id: "1", name: "Admin", email } as any;
+        // include a role for RBAC; default to OWNER if not provided
+        const role = (process.env.ADMIN_ROLE as any) || 'owner';
+        return { id: "1", name: "Admin", email, role } as any;
       },
     }),
   ],
   session: { strategy: "jwt", maxAge: 60 * 60 * 2 }, // 2 hours
   jwt: { maxAge: 60 * 60 * 2 },
   secret: process.env.NEXTAUTH_SECRET,
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        // propagate role to token (for new sign-ins)
+        token.role = (user as any).role || token.role || 'owner';
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as any).role = (token as any).role || 'owner';
+      }
+      return session;
+    },
+  },
   pages: {
     signIn: "/admin-login",
   },
