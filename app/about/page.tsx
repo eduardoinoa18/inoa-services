@@ -1,6 +1,20 @@
 import Image from "next/image";
+import TeamGrid from "@/components/TeamGrid";
+import { team } from "@/lib/team-data";
+import fs from "node:fs";
+import path from "node:path";
 
 export default function AboutPage() {
+  // Discover any images placed under /public/images/about
+  let gallery: string[] = [];
+  try {
+    const dir = path.join(process.cwd(), "public", "images", "about");
+    const files = fs.readdirSync(dir);
+    gallery = files
+      .filter((f) => /\.(png|jpe?g|webp|gif|svg)$/i.test(f))
+      .slice(0, 12)
+      .map((f) => `/images/about/${f}`);
+  } catch {}
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-white to-gray-50">
       {/* Breadcrumbs / Back to home */}
@@ -14,7 +28,7 @@ export default function AboutPage() {
         <p className="mt-4 text-lg text-gray-700 max-w-3xl">Bilingual, detail‑oriented support across Tax Preparation, Immigration document assistance (non‑legal), Notary Public, Real Estate advisory, and curated Dominican Republic investments. Built on accuracy, clarity, and trust.</p>
       </section>
 
-      {/* Mission + Founder */}
+  {/* Mission + Founder */}
       <section className="max-w-6xl mx-auto px-4 pb-20 grid md:grid-cols-2 gap-10 items-center">
         <div>
           <h2 className="text-2xl font-semibold text-gray-900 mb-3">Our Mission</h2>
@@ -31,8 +45,32 @@ export default function AboutPage() {
           </div>
         </div>
         <div className="relative aspect-[4/4] w-full max-w-sm mx-auto">
-          <Image src="/images/founder.jpg" alt="Eduardo Inoa" fill className="rounded-2xl object-cover border" />
+          <Image src="/images/founder.png" alt="Eduardo Inoa" fill className="rounded-2xl object-cover border" />
         </div>
+      </section>
+
+      {/* Photo gallery (easy to extend) */}
+      <section className="max-w-6xl mx-auto px-4 pb-14">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-4">Photos</h2>
+        <p className="text-gray-600 text-sm mb-6">Add your real images under <code className="px-1 py-0.5 rounded bg-gray-100 border">/public/images/about/</code>. The gallery below will display them automatically.</p>
+        {gallery.length === 0 ? (
+          <div className="rounded-xl border p-6 bg-white text-sm text-gray-600">No photos yet. Drop images into <code className="px-1 py-0.5 rounded bg-gray-100 border">public/images/about</code> and redeploy.</div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {gallery.map((src) => (
+              <div key={src} className="relative aspect-[4/3] rounded-xl overflow-hidden border bg-white">
+                <Image src={src} alt="About photo" fill className="object-cover" />
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Meet the Team */}
+      <section className="max-w-6xl mx-auto px-4 pb-24">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-2">Meet the Team</h2>
+        <p className="text-gray-600 mb-6">As we grow, we’ll introduce the team here. Start by replacing the founder photo and adding new members in <code className="px-1 py-0.5 rounded bg-gray-100 border">lib/team-data.ts</code>.</p>
+        <TeamGrid members={team} />
       </section>
 
       {/* Founder card */}

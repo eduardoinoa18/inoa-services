@@ -28,21 +28,22 @@ export default function Logo({ size = 72, withText = false, tagline = false, var
       <title>Inoa Services</title>
       {/* Globe circle */}
       <circle cx="92" cy="104" r="68" fill={TEAL} />
-      {/* Globe latitude / longitude simplified */}
-      <path d="M36 100c20 10 92 18 116 0M60 60c10 14 10 70 0 88M124 60c10 14 10 70 0 88M46 128c28 12 72 12 100 0" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" fill="none" opacity="0.85" />
-      {/* Leaf overlay bottom right */}
-      <path d="M72 150c26-4 44-10 62-26 10-9 18-20 26-32-2 24-12 44-30 58-18 14-38 18-58 16" fill={TEAL_DARK} />
-      <path d="M72 150c18-2 36-8 54-22" stroke="#fff" strokeWidth="5" strokeLinecap="round" fill="none" />
-      {/* House (roof + posts) */}
+      {/* Globe lines refined */}
+      <path d="M32 104c22 12 100 18 120 0" stroke="#fff" strokeWidth="6" strokeLinecap="round" fill="none" opacity="0.9" />
+      <path d="M50 72c10 16 10 76 0 96M134 72c10 16 10 76 0 96" stroke="#fff" strokeWidth="5" strokeLinecap="round" fill="none" opacity="0.9" />
+      <path d="M44 134c30 12 76 12 104 0" stroke="#fff" strokeWidth="5" strokeLinecap="round" fill="none" opacity="0.85" />
+      {/* Leaf overlay */}
+      <path d="M70 152c26-4 48-12 66-28 10-10 18-22 24-36-2 26-12 48-30 62s-40 20-60 18" fill={TEAL_DARK} />
+      <path d="M72 152c18-2 36-10 54-24" stroke="#fff" strokeWidth="5" strokeLinecap="round" fill="none" />
+      {/* House mark */}
       <path d="M92 52l60 56h-24v52H56v-52H32l60-56Z" fill={NAVY} />
-      {/* Inner white body (leave roof/navy edges) */}
-      <path d="M92 80l36 32v40H56v-40l36-32Z" fill="#ffffff" />
-      {/* 4-pane window */}
+      <path d="M92 82l36 30v48H56v-48l36-30Z" fill="#fff" />
+      {/* Window */}
       <g fill={NAVY}>
-        <rect x="86" y="108" width="12" height="12" />
-        <rect x="106" y="108" width="12" height="12" />
-        <rect x="86" y="128" width="12" height="12" />
-        <rect x="106" y="128" width="12" height="12" />
+        <rect x="88" y="112" width="10" height="10" rx="1" />
+        <rect x="108" y="112" width="10" height="10" rx="1" />
+        <rect x="88" y="130" width="10" height="10" rx="1" />
+        <rect x="108" y="130" width="10" height="10" rx="1" />
       </g>
     </svg>
   );
