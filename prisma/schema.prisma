@@ -36,7 +36,7 @@ model Client {
   website       String?
   status        String   @default("Lead")
   source        String?
-  tags          String[]
+  tags          Json
   assignedToId  String?
   notes         String?
   createdBy     String?
@@ -98,7 +98,7 @@ model Event {
   clientId   String?
   location   String?
   notes      String?
-  attendees  String[]
+  attendees  Json
   createdBy  String?
   assignedTo String?
   status     String   @default("confirmed")
