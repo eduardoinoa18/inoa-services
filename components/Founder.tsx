@@ -1,10 +1,17 @@
 "use client";
 import Image from "next/image";
 import Reveal from "./Reveal";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function Founder() {
   const [src, setSrc] = useState("/images/founder.png");
+  useEffect(() => {
+    // Fetch founderUrl from settings API (edge-safe client fetch)
+    fetch('/api/settings').then(r=>r.ok?r.json():null).then(json=>{
+      const url = json?.data?.founderUrl;
+      if (url) setSrc(url);
+    }).catch(()=>{});
+  }, []);
   return (
     <section id="founder" className="relative py-24 px-4 bg-gradient-to-b from-white via-white to-gray-50 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none opacity-[0.12] bg-[radial-gradient(circle_at_25%_25%,#0D6EFD_0,#0D6EFD_8%,transparent_55%),radial-gradient(circle_at_75%_65%,#198754_0,#198754_10%,transparent_60%)]" />

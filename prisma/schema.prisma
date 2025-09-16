@@ -139,3 +139,42 @@ model IntegrationToken {
   updatedAt    DateTime @updatedAt
   @@index([provider, userEmail])
 }
+
+// Singleton row to store site-wide content and asset URLs.
+model SiteSetting {
+  id           String   @id @default("singleton")
+  // Branding
+  logoUrl      String?
+  faviconUrl   String?
+  // People
+  founderUrl   String?
+  team         Json     // array of {name,title,bio,image,socials[]}
+  // About page gallery images
+  aboutGallery Json     // array of string URLs
+  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now())
+}
+
+// Global site settings (single row). Store JSON blobs for flexible content.
+model SiteSettings {
+  id            String   @id @default("singleton")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  branding      Json     // { logoUrl, faviconUrl }
+  founder       Json     // { name, title, photoUrl, bio }
+  aboutGallery  Json     // string[] of image URLs
+}
+
+// Team members managed in Admin Settings
+model TeamMember {
+  id         String   @id @default(cuid())
+  name       String
+  title      String?
+  bio        String?
+  imageUrl   String?
+  roleLabel  String?   // e.g., Operations, Advisor, Coordinator
+  userEmail  String?   // link to User by email if applicable
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  @@index([userEmail])
+}

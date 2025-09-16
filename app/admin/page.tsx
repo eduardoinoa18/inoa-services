@@ -3,6 +3,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line } from 'recharts';
 import { Icons } from '@/components/icons';
+import AdminUploader from '@/components/AdminUploader';
+import UploadDropzone from '@/components/UploadDropzone';
+import SettingsMediaManager from '@/components/SettingsMediaManager';
 
 /************************* Types *************************/
 interface ClientRecord {
@@ -920,6 +923,7 @@ function SettingsTab({settings,setSettings, staff, setStaff}:{settings:SettingsD
   const [userForm, setUserForm] = useState<StaffUser>({ id: uid(), name: '', email: '', role: 'staff' });
   const addUser = (e:any) => { e.preventDefault(); if(!userForm.email) return; setStaff([...staff, userForm]); setUserForm({ id: uid(), name:'', email:'', role:'staff' }); };
   const removeUser = (id:string) => { if(confirm('Remove user?')) setStaff(staff.filter(u=>u.id!==id)); };
+  const isAdmin = form.currentRole==='owner' || form.currentRole==='admin';
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -952,6 +956,10 @@ function SettingsTab({settings,setSettings, staff, setStaff}:{settings:SettingsD
             </div>
             <button className="px-4 py-2 bg-gray-900 text-white rounded-xl self-start text-sm font-medium">Save</button>
         </form>
+      </Card>
+      <Card title="Brand Images & Media" actions={!isAdmin && <span className="text-xs text-gray-500">Read-only for your role</span>}>
+        <div className="text-xs text-gray-600 mb-3">Admins/Owners can update global media. Staff/Viewer are read-only.</div>
+        <SettingsMediaManager />
       </Card>
       <Card title="Integrations Roadmap">
         <div className="text-sm text-gray-600 space-y-2">
